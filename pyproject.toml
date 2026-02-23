@@ -7,7 +7,9 @@ name = "nfl-rag-db"
 version = "0.1.0"
 description = "Minimal Python scaffold for nfl-rag-db"
 requires-python = ">=3.10"
-dependencies = []
+dependencies = [
+  "duckdb>=0.10.0",
+]
 
 [project.optional-dependencies]
 dev = [
