@@ -191,6 +191,7 @@ def ingest_pbp_and_scoring(
         params={"season": season_i, "url": url_final},
     )
 
+    in_tx = False
     try:
         ensure_schemas(con)
 
@@ -245,7 +246,18 @@ def ingest_pbp_and_scoring(
 
         incoming_rows = int(con.execute("SELECT COUNT(*) FROM tmp_incoming_pbp;").fetchone()[0])
 
-        if not _table_exists(con, "core", "pbp"):
+        scoring_sql = _build_scoring_event_sql("tmp_incoming_pbp", cols, season_i)
+        con.execute(
+            "CREATE OR REPLACE TEMP VIEW tmp_incoming_scoring_event AS " + scoring_sql
+        )
+        scoring_rows = int(
+            con.execute("SELECT COUNT(*) FROM tmp_incoming_scoring_event;").fetchone()[0]
+        )
+
+        core_pbp_exists = _table_exists(con, "core", "pbp")
+        core_scoring_exists = _table_exists(con, "core", "scoring_event")
+
+        if not core_pbp_exists:
             pbp_changes = {
                 "incoming_rows": incoming_rows,
                 "existing_rows": 0,
@@ -254,7 +266,6 @@ def ingest_pbp_and_scoring(
                 "deleted": 0,
             }
             prev_season_rows = None
-            con.execute("CREATE TABLE core.pbp AS SELECT * FROM tmp_incoming_pbp;")
         else:
             if "season" not in cols:
                 raise ValueError("core.pbp exists but incoming pbp has no 'season' column")
@@ -275,43 +286,7 @@ def ingest_pbp_and_scoring(
                 hash_cols=cols,
             )
 
-            con.execute(f"DELETE FROM core.pbp WHERE season = {season_i};")
-            con.execute("INSERT INTO core.pbp SELECT * FROM tmp_incoming_pbp;")
-
-        if _table_exists(con, "core", "pbp") and "season" in cols:
-            season_rows = int(
-                con.execute(
-                    "SELECT COUNT(*) FROM core.pbp WHERE season = ?",
-                    [season_i],
-                ).fetchone()[0]
-            )
-        else:
-            season_rows = incoming_rows
-
-        record_table_stat(
-            con,
-            run_id=run_id,
-            table_fqn="core.pbp",
-            row_count=season_rows,
-            previous_row_count=prev_season_rows,
-            note=(
-                f"season={season_i}; "
-                f"ins={pbp_changes['inserted']} "
-                f"upd={pbp_changes['updated']} "
-                f"del={pbp_changes['deleted']}"
-            ),
-        )
-
-        scoring_sql = _build_scoring_event_sql("tmp_incoming_pbp", cols, season_i)
-        con.execute(
-            "CREATE OR REPLACE TEMP VIEW tmp_incoming_scoring_event AS " + scoring_sql
-        )
-
-        scoring_rows = int(
-            con.execute("SELECT COUNT(*) FROM tmp_incoming_scoring_event;").fetchone()[0]
-        )
-
-        if not _table_exists(con, "core", "scoring_event"):
+        if not core_scoring_exists:
             scoring_changes = {
                 "incoming_rows": scoring_rows,
                 "existing_rows": 0,
@@ -320,10 +295,6 @@ def ingest_pbp_and_scoring(
                 "deleted": 0,
             }
             prev_scoring_rows = None
-            con.execute(
-                "CREATE TABLE core.scoring_event AS "
-                "SELECT * FROM tmp_incoming_scoring_event;"
-            )
         else:
             prev_scoring_rows = int(
                 con.execute(
@@ -335,7 +306,6 @@ def ingest_pbp_and_scoring(
                 "CREATE OR REPLACE TEMP VIEW tmp_existing_scoring_season AS "
                 f"SELECT * FROM core.scoring_event WHERE season = {season_i};"
             )
-
             scoring_cols = _get_cols(con, "core", "scoring_event")
             scoring_changes = compute_change_counts(
                 con,
@@ -345,9 +315,82 @@ def ingest_pbp_and_scoring(
                 hash_cols=scoring_cols,
             )
 
+        con.execute("BEGIN TRANSACTION;")
+        in_tx = True
+
+        if not core_pbp_exists:
+            con.execute("CREATE TABLE core.pbp AS SELECT * FROM tmp_incoming_pbp;")
+        else:
+            con.execute(f"DELETE FROM core.pbp WHERE season = {season_i};")
+            con.execute("INSERT INTO core.pbp SELECT * FROM tmp_incoming_pbp;")
+
+        if not core_scoring_exists:
+            con.execute(
+                "CREATE TABLE core.scoring_event AS "
+                "SELECT * FROM tmp_incoming_scoring_event;"
+            )
+        else:
             con.execute(f"DELETE FROM core.scoring_event WHERE season = {season_i};")
             con.execute("INSERT INTO core.scoring_event SELECT * FROM tmp_incoming_scoring_event;")
 
+        if "season" in cols:
+            dup_pbp = int(
+                con.execute(
+                    """
+                    SELECT COUNT(*)
+                    FROM (
+                      SELECT game_id, play_id
+                      FROM core.pbp
+                      WHERE season = ?
+                      GROUP BY game_id, play_id
+                      HAVING COUNT(*) > 1
+                    );
+                    """,
+                    [season_i],
+                ).fetchone()[0]
+            )
+            if dup_pbp != 0:
+                raise ValueError(
+                    f"Duplicate (game_id,play_id) in core.pbp season={season_i}: {dup_pbp}"
+                )
+
+        dup_scoring = int(
+            con.execute(
+                """
+                SELECT COUNT(*)
+                FROM (
+                  SELECT game_id, play_id, scoring_type
+                  FROM core.scoring_event
+                  WHERE season = ?
+                  GROUP BY game_id, play_id, scoring_type
+                  HAVING COUNT(*) > 1
+                );
+                """,
+                [season_i],
+            ).fetchone()[0]
+        )
+        if dup_scoring != 0:
+            raise ValueError(
+                f"Duplicate (game_id,play_id,scoring_type) "
+                f"in scoring_event season={season_i}: {dup_scoring}"
+            )
+
+        con.execute("COMMIT;")
+        in_tx = False
+
+        record_table_stat(
+            con,
+            run_id=run_id,
+            table_fqn="core.pbp",
+            row_count=incoming_rows,
+            previous_row_count=prev_season_rows,
+            note=(
+                f"season={season_i}; "
+                f"ins={pbp_changes['inserted']} "
+                f"upd={pbp_changes['updated']} "
+                f"del={pbp_changes['deleted']}"
+            ),
+        )
         record_table_stat(
             con,
             run_id=run_id,
@@ -384,6 +427,12 @@ def ingest_pbp_and_scoring(
         return run_id
 
     except Exception as e:
+        if in_tx:
+            try:
+                con.execute("ROLLBACK;")
+            except Exception:
+                pass
+
         finish_run(
             con,
             run_id=run_id,
