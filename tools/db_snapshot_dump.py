@@ -31,11 +31,13 @@ def _table_exists(con: duckdb.DuckDBPyConnection, schema: str, table: str) -> bo
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="Dump DuckDB schema + table counts + ingest audit summary.")
+    ap = argparse.ArgumentParser(
+        description="Dump DuckDB schema, counts, and ingest run summary."
+    )
     ap.add_argument("--db", default="data/nfl.duckdb", help="DuckDB path")
     ap.add_argument("--out", required=True, help="Output markdown path")
     ap.add_argument("--max-runs", type=int, default=25, help="How many ingest runs to include")
-    ap.add_argument("--max-season-rows", type=int, default=25, help="Max seasons in pbp breakdown")
+    ap.add_argument("--max-season-rows", type=int, default=25, help="Max seasons in PBP breakdown")
     args = ap.parse_args()
 
     db_path = Path(args.db).resolve()
@@ -56,8 +58,10 @@ def main() -> int:
     con = duckdb.connect(str(db_path))
     try:
         schemas = ["core", "stg", "audit"]
+
         lines.append("## Tables\n\n")
         lines.append("| schema | table | rows |\n|---|---|---:|\n")
+
         tables: list[tuple[str, str]] = []
         for sch in schemas:
             rows = con.execute(

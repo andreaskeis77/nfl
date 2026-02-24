@@ -6,10 +6,9 @@ import ast
 import re
 import subprocess
 from pathlib import Path
-from typing import List, Tuple
 
 
-def run_cmd(cmd: List[str], cwd: Path) -> Tuple[int, str]:
+def run_cmd(cmd: list[str], cwd: Path) -> tuple[int, str]:
     r = subprocess.run(cmd, cwd=str(cwd), capture_output=True, text=True, check=False)
     out = (r.stdout or "") + (("\n" + r.stderr) if r.stderr else "")
     return r.returncode, out.strip()
@@ -23,19 +22,71 @@ def git_ls_files(repo_root: Path) -> list[str]:
 
 
 _RULES: list[tuple[re.Pattern[str], str, str]] = [
-    (re.compile(r"^src/nfl_rag_db/ingest/"), "Ingestion", "Dataset-specific ingestion pipelines"),
-    (re.compile(r"^src/nfl_rag_db/ingest_.*\\.py$"), "Ingestion", "CLI entrypoints for ingestion pipelines"),
-    (re.compile(r"^src/nfl_rag_db/"), "Core", "Core library code (DB, audit, change detection, helpers)"),
-    (re.compile(r"^tools/"), "Tools", "Developer tools (handoff, diagnostics, dumps)"),
-    (re.compile(r"^tests/"), "Tests", "Unit/integration tests"),
-    (re.compile(r"^docs/adr/"), "Docs", "Architecture Decision Records (ADRs)"),
-    (re.compile(r"^docs/concepts/"), "Docs", "Design / concept documents"),
-    (re.compile(r"^docs/reference/"), "Docs", "Reference docs (e.g., engineering manifest)"),
-    (re.compile(r"^docs/"), "Docs", "Project documentation"),
-    (re.compile(r"^pyproject\\.toml$"), "Config", "Python project configuration"),
-    (re.compile(r"^\\.gitignore$"), "Config", "Git ignore rules"),
-    (re.compile(r"^\\.gitattributes$"), "Config", "Git attributes / line endings"),
-    (re.compile(r"^README\\.md$"), "Docs", "Project README"),
+    (
+        re.compile(r"^src/nfl_rag_db/ingest/"),
+        "Ingestion",
+        "Dataset ingestion pipelines",
+    ),
+    (
+        re.compile(r"^src/nfl_rag_db/ingest_.*\\.py$"),
+        "Ingestion",
+        "CLI entrypoints for ingestion",
+    ),
+    (
+        re.compile(r"^src/nfl_rag_db/"),
+        "Core",
+        "Core library code",
+    ),
+    (
+        re.compile(r"^tools/"),
+        "Tools",
+        "Developer tools (handoff, diagnostics)",
+    ),
+    (
+        re.compile(r"^tests/"),
+        "Tests",
+        "Unit/integration tests",
+    ),
+    (
+        re.compile(r"^docs/adr/"),
+        "Docs",
+        "Architecture Decision Records (ADRs)",
+    ),
+    (
+        re.compile(r"^docs/concepts/"),
+        "Docs",
+        "Design / concept documents",
+    ),
+    (
+        re.compile(r"^docs/reference/"),
+        "Docs",
+        "Reference docs (e.g., manifest)",
+    ),
+    (
+        re.compile(r"^docs/"),
+        "Docs",
+        "Project documentation",
+    ),
+    (
+        re.compile(r"^pyproject\\.toml$"),
+        "Config",
+        "Python project configuration",
+    ),
+    (
+        re.compile(r"^\\.gitignore$"),
+        "Config",
+        "Git ignore rules",
+    ),
+    (
+        re.compile(r"^\\.gitattributes$"),
+        "Config",
+        "Git attributes / line endings",
+    ),
+    (
+        re.compile(r"^README\\.md$"),
+        "Docs",
+        "Project README",
+    ),
 ]
 
 

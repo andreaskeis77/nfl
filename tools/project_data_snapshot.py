@@ -31,7 +31,9 @@ def count_files(p: Path) -> int:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="Snapshot data folder (sizes, counts) without copying data.")
+    ap = argparse.ArgumentParser(
+        description="Snapshot data folder (sizes/counts) without copying data."
+    )
     ap.add_argument("--root", default=".", help="Repo root")
     ap.add_argument("--out", required=True, help="Output markdown path")
     ap.add_argument("--db", default="data/nfl.duckdb", help="DuckDB path (relative to root)")
@@ -71,7 +73,8 @@ def main() -> int:
         lines.append(f"- total_size_bytes: {dir_size_bytes(raw_dir)}\n\n")
 
         lines.append("| dataset | files | size_bytes |\n|---|---:|---:|\n")
-        for child in sorted([p for p in raw_dir.iterdir() if p.is_dir()], key=lambda p: p.name.lower()):
+        children = [p for p in raw_dir.iterdir() if p.is_dir()]
+        for child in sorted(children, key=lambda p: p.name.lower()):
             lines.append(f"| `{child.name}` | {count_files(child)} | {dir_size_bytes(child)} |\n")
         lines.append("\n")
     else:

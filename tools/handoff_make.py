@@ -8,14 +8,13 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
-from typing import List, Tuple
 
 
 def now_stamp() -> str:
     return dt.datetime.now().strftime("%Y%m%d-%H%M%S")
 
 
-def run(cmd: List[str], cwd: Path) -> Tuple[int, str]:
+def run(cmd: list[str], cwd: Path) -> tuple[int, str]:
     r = subprocess.run(cmd, cwd=str(cwd), capture_output=True, text=True, check=False)
     out = (r.stdout or "") + (("\n" + r.stderr) if r.stderr else "")
     return r.returncode, out.strip()
@@ -42,11 +41,20 @@ def copy_dir_if_exists(src: Path, dst: Path) -> None:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="Create a full handoff bundle under docs/_snapshot.")
+    ap = argparse.ArgumentParser(description="Create a handoff bundle under docs/_snapshot.")
     ap.add_argument("--root", default=".", help="Repo root")
     ap.add_argument("--db", default="data/nfl.duckdb", help="DuckDB path (relative to root)")
-    ap.add_argument("--max-bytes", type=int, default=1_000_000, help="Max bytes per file in audit/source dumps")
-    ap.add_argument("--include-untracked", action="store_true", help="Include untracked files in audit/tree")
+    ap.add_argument(
+        "--max-bytes",
+        type=int,
+        default=1_000_000,
+        help="Max bytes per file in dumps",
+    )
+    ap.add_argument(
+        "--include-untracked",
+        action="store_true",
+        help="Include untracked files in audit/tree",
+    )
     ap.add_argument("--zip", action="store_true", help="Create a zip of the snapshot folder")
     args = ap.parse_args()
 
@@ -59,7 +67,6 @@ def main() -> int:
     steps: list[tuple[str, int, str]] = []
     failed = False
 
-    # git metadata (best effort)
     rc, head = run(["git", "rev-parse", "HEAD"], cwd=root)
     git_head = head.splitlines()[-1].strip() if rc == 0 and head else "unknown"
     rc, br = run(["git", "branch", "--show-current"], cwd=root)
@@ -67,7 +74,7 @@ def main() -> int:
     rc, st = run(["git", "status", "--porcelain=v1"], cwd=root)
     git_dirty = bool(st.strip()) if rc == 0 else False
 
-    # 1) project tree
+    # project tree
     tree_out = out_dir / "project_tree.txt"
     cmd = [sys.executable, "tools/project_tree_dump.py", "--root", ".", "--out", str(tree_out)]
     if args.include_untracked:
@@ -78,7 +85,7 @@ def main() -> int:
         failed = True
         write_text(out_dir / "project_tree_dump.stderr.txt", out + "\n")
 
-    # 2) file catalog
+    # file catalog
     cat_out = out_dir / "file_catalog.md"
     rc, out = run(
         [sys.executable, "tools/file_catalog_dump.py", "--root", ".", "--out", str(cat_out)],
@@ -89,7 +96,7 @@ def main() -> int:
         failed = True
         write_text(out_dir / "file_catalog_dump.stderr.txt", out + "\n")
 
-    # 3) source bundle
+    # source bundle
     src_out = out_dir / "source_bundle.md"
     rc, out = run(
         [
@@ -109,7 +116,7 @@ def main() -> int:
         failed = True
         write_text(out_dir / "source_bundle_dump.stderr.txt", out + "\n")
 
-    # 4) project audit dump (safe defaults)
+    # project audit
     audit_out = out_dir / "project_audit_dump.md"
     audit_cmd = [
         sys.executable,
@@ -129,7 +136,7 @@ def main() -> int:
         failed = True
         write_text(out_dir / "project_audit_dump.stderr.txt", out + "\n")
 
-    # 5) data snapshot
+    # data snapshot
     data_out = out_dir / "data_snapshot.md"
     rc, out = run(
         [
@@ -149,7 +156,7 @@ def main() -> int:
         failed = True
         write_text(out_dir / "project_data_snapshot.stderr.txt", out + "\n")
 
-    # 6) db snapshot
+    # db snapshot
     db_out = out_dir / "db_snapshot.md"
     rc, out = run(
         [sys.executable, "tools/db_snapshot_dump.py", "--db", args.db, "--out", str(db_out)],
@@ -160,7 +167,7 @@ def main() -> int:
         failed = True
         write_text(out_dir / "db_snapshot_dump.stderr.txt", out + "\n")
 
-    # 7) runtime state (no secrets; presence only)
+    # runtime state
     runtime_out = out_dir / "runtime_state.md"
     rc2, pf = run([sys.executable, "-m", "pip", "freeze"], cwd=root)
     pip_freeze = pf if rc2 == 0 else "(pip freeze failed)"
@@ -182,7 +189,7 @@ def main() -> int:
     write_text(runtime_out, "".join(runtime))
     steps.append(("runtime_state", 0, str(runtime_out)))
 
-    # 8) copy knowledge files (best effort)
+    # copy docs
     copy_dir_if_exists(root / "docs" / "adr", out_dir / "docs" / "adr")
     copy_dir_if_exists(root / "docs" / "concepts", out_dir / "docs" / "concepts")
     copy_dir_if_exists(root / "docs" / "reference", out_dir / "docs" / "reference")
@@ -191,7 +198,7 @@ def main() -> int:
     if (root / "docs" / "HANDOFF_MANIFEST.md").exists():
         copy_if_exists(root / "docs" / "HANDOFF_MANIFEST.md", out_dir / "HANDOFF_MANIFEST.md")
 
-    # 9) summary
+    # summary
     summary_out = out_dir / "handoff_summary.md"
     summ: list[str] = []
     summ.append("# Handoff Summary\n\n")
@@ -207,27 +214,26 @@ def main() -> int:
     summ.append("\n")
     write_text(summary_out, "".join(summ))
 
-    # update latest (copy, windows-safe)
+    # latest
     latest_dir = snap_root / "latest"
     if latest_dir.exists():
         shutil.rmtree(latest_dir, ignore_errors=True)
     shutil.copytree(out_dir, latest_dir)
 
-    # optional zip
+    # zip
     if args.zip:
-        zip_path = snap_root / f"handoff_{stamp}.zip"
         import zipfile
 
+        zip_path = snap_root / f"handoff_{stamp}.zip"
         with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as zf:
             for p in out_dir.rglob("*"):
                 if p.is_file():
                     zf.write(p, arcname=str(p.relative_to(out_dir)))
         steps.append(("zip", 0, str(zip_path)))
+        print(f"Zip written to: {zip_path}")
 
     print(f"Handoff written to: {out_dir}")
     print(f"Latest updated: {latest_dir}")
-    if args.zip:
-        print(f"Zip written to: {zip_path}")
     if failed:
         print("Handoff FAILED (see handoff_summary.md).")
         return 2

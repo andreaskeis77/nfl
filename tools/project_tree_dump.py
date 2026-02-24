@@ -5,8 +5,6 @@ import argparse
 import os
 import subprocess
 from pathlib import Path
-from typing import List
-
 
 DEFAULT_EXCLUDE_DIRS = {
     ".git",
@@ -23,7 +21,7 @@ DEFAULT_EXCLUDE_DIRS = {
 }
 
 
-def run_cmd(cmd: List[str], cwd: Path) -> tuple[int, str]:
+def run_cmd(cmd: list[str], cwd: Path) -> tuple[int, str]:
     r = subprocess.run(cmd, cwd=str(cwd), capture_output=True, text=True, check=False)
     out = (r.stdout or "") + (("\n" + r.stderr) if r.stderr else "")
     return r.returncode, out.strip()
@@ -82,7 +80,11 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="Dump project tree (tracked files by default).")
     ap.add_argument("--root", default=".", help="Repo root")
     ap.add_argument("--out", required=True, help="Output file (txt)")
-    ap.add_argument("--include-untracked", action="store_true", help="Use os.walk instead of git ls-files")
+    ap.add_argument(
+        "--include-untracked",
+        action="store_true",
+        help="Use os.walk instead of git ls-files",
+    )
     args = ap.parse_args()
 
     repo_root = Path(args.root).resolve()
@@ -92,7 +94,7 @@ def main() -> int:
     rels = walk_all_files(repo_root) if args.include_untracked else git_ls_files(repo_root)
     rels = [r for r in rels if not should_exclude(r, DEFAULT_EXCLUDE_DIRS)]
 
-    text = []
+    text: list[str] = []
     text.append(f"repo_root: {repo_root}\n")
     text.append(f"mode: {'os.walk' if args.include_untracked else 'git ls-files'}\n")
     text.append(f"files: {len(rels)}\n\n")

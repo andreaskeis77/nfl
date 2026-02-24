@@ -6,8 +6,6 @@ import fnmatch
 import hashlib
 import subprocess
 from pathlib import Path
-from typing import List, Tuple
-
 
 DEFAULT_EXCLUDE_DIRS = {
     ".git",
@@ -42,7 +40,7 @@ DEFAULT_EXCLUDE_GLOBS = [
 ]
 
 
-def run_cmd(cmd: List[str], cwd: Path) -> Tuple[int, str]:
+def run_cmd(cmd: list[str], cwd: Path) -> tuple[int, str]:
     r = subprocess.run(cmd, cwd=str(cwd), capture_output=True, text=True, check=False)
     out = (r.stdout or "") + (("\n" + r.stderr) if r.stderr else "")
     return r.returncode, out.strip()
@@ -61,8 +59,11 @@ def should_exclude(rel: str) -> bool:
         return True
     if parts & DEFAULT_EXCLUDE_DIRS:
         return True
+
+    rel_norm = rel.replace("\\", "/")
+    name = Path(rel_norm).name
     for g in DEFAULT_EXCLUDE_GLOBS:
-        if fnmatch.fnmatch(Path(rel).name, g) or fnmatch.fnmatch(rel, g):
+        if fnmatch.fnmatch(name, g) or fnmatch.fnmatch(rel_norm, g):
             return True
     return False
 
