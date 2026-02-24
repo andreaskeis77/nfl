@@ -20,7 +20,8 @@ def main() -> None:
     last = con.execute(
         """
         SELECT
-          run_id, started_at, component, source, outcome, duration_ms, counts_json
+          run_id, started_at, component, source, outcome, duration_ms,
+          counts_json, error_class, error_code, error_message
         FROM audit.ingest_run
         ORDER BY started_at DESC
         LIMIT 1
@@ -31,7 +32,19 @@ def main() -> None:
         print("No runs found in audit.ingest_run")
         return
 
-    run_id, started_at, component, source, outcome, duration_ms, counts_json = last
+    (
+        run_id,
+        started_at,
+        component,
+        source,
+        outcome,
+        duration_ms,
+        counts_json,
+        err_cls,
+        err_code,
+        err_msg,
+    ) = last
+
     print("=== LAST RUN ===")
     print(f"run_id     : {run_id}")
     print(f"started_at : {started_at}")
@@ -41,6 +54,12 @@ def main() -> None:
     print(f"duration_ms: {duration_ms}")
     print("counts_json:")
     print(_pretty_json(counts_json))
+
+    if outcome != "ok":
+        print("\nerror:")
+        print(f"  class: {err_cls}")
+        print(f"  code : {err_code}")
+        print(f"  msg  : {err_msg}")
 
     files = con.execute(
         """
