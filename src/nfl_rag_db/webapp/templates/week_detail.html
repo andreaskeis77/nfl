@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="grid">
+  <div class="card">
+    <div class="muted">Season</div>
+    <div class="kpi">{{ season }}</div>
+  </div>
+  <div class="card">
+    <div class="muted">Week</div>
+    <div class="kpi">{{ week }}</div>
+  </div>
+  <div class="card">
+    <div class="muted">Games sichtbar</div>
+    <div class="kpi">{{ summary.games_visible }}</div>
+  </div>
+  <div class="card">
+    <div class="muted">Teams sichtbar</div>
+    <div class="kpi">{{ summary.teams_visible }}</div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>Games</h2>
+  {% if games %}
+  <table>
+    <thead>
+      <tr><th>Game</th><th>Matchup</th><th>Score</th><th>Type</th></tr>
+    </thead>
+    <tbody>
+      {% for row in games %}
+      <tr>
+        <td>
+          {% if row.game_id %}
+            <a href="/games/{{ row.game_id|urlencode }}">{{ row.game_id }}</a>
+          {% else %}
+            —
+          {% endif %}
+        </td>
+        <td>
+          {% if row.away_team %}<a href="/teams/{{ row.away_team|urlencode }}">{{ row.away_team }}</a>{% endif %}
+          @
+          {% if row.home_team %}<a href="/teams/{{ row.home_team|urlencode }}">{{ row.home_team }}</a>{% endif %}
+        </td>
+        <td>
+          {% if row.away_score is not none or row.home_score is not none %}
+            {{ row.away_score if row.away_score is not none else "" }} - {{ row.home_score if row.home_score is not none else "" }}
+          {% endif %}
+        </td>
+        <td>{{ row.season_type or "" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty">Für diese Week sind keine Games sichtbar.</div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+{% if runs %}
+<table>
+  <thead>
+    <tr><th>Start</th><th>Component</th><th>Source</th><th>Outcome</th><th>ms</th><th>Counts</th><th>Error</th></tr>
+  </thead>
+  <tbody>
+    {% for run in runs %}
+    <tr>
+      <td>{{ run.started_at }}</td>
+      <td><code>{{ run.component }}</code></td>
+      <td>{{ run.source or "" }}</td>
+      <td>{{ run.outcome or "" }}</td>
+      <td>{{ run.duration_ms or "" }}</td>
+      <td><code>{{ run.counts_json or "" }}</code></td>
+      <td>{{ run.error_class or "" }} {{ run.error_message or "" }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty">`audit.ingest_run` ist nicht vorhanden oder leer.</div>
+{% endif %}
+{% endblock %}

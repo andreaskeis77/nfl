@@ -5,16 +5,20 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "nfl-rag-db"
 version = "0.1.0"
-description = "Minimal Python scaffold for nfl-rag-db"
+description = "Local NFL data platform with DuckDB, audit-oriented ingestion, and a read-only web UI foundation"
 requires-python = ">=3.10"
 dependencies = [
   "duckdb>=0.10.0",
+  "fastapi",
+  "jinja2",
+  "uvicorn",
 ]
 
 [project.optional-dependencies]
 dev = [
   "pytest>=8.0",
   "ruff>=0.6.0",
+  "httpx",
 ]
 
 [tool.setuptools]

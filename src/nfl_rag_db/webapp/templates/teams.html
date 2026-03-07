@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<form class="search" method="get">
+  <input type="search" name="q" value="{{ query }}" placeholder="Teamcode oder Teamname suchen">
+  <button type="submit">Suchen</button>
+</form>
+
+<div class="section">
+  {% if teams %}
+  <table>
+    <thead>
+      <tr><th>Team</th><th>Name</th><th>Games sichtbar</th><th>Weeks sichtbar</th><th>Players sichtbar</th></tr>
+    </thead>
+    <tbody>
+      {% for row in teams %}
+      <tr>
+        <td><a href="/teams/{{ row.team_code|urlencode }}">{{ row.team_code }}</a></td>
+        <td>{{ row.team_name }}</td>
+        <td>{{ row.games_visible }}</td>
+        <td>{{ row.weeks_visible }}</td>
+        <td>{{ row.players_visible }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty">Keine Teamdaten sichtbar.</div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <title>{{ title }} · nfl-rag-db</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root {
+      --bg: #0f172a;
+      --bg-soft: #111827;
+      --panel: #1f2937;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --border: #374151;
+      --ok: #10b981;
+      --warn: #f59e0b;
+      --fail: #ef4444;
+      --link: #93c5fd;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, Segoe UI, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.45;
+    }
+    a { color: var(--link); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    header {
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-soft);
+    }
+    .wrap {
+      width: min(1240px, calc(100vw - 32px));
+      margin: 0 auto;
+    }
+    .topbar {
+      display: flex;
+      gap: 24px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 0;
+    }
+    nav {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    main { padding: 24px 0 48px; }
+    .muted { color: var(--muted); }
+    .grid {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      margin-bottom: 20px;
+    }
+    .subgrid {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    }
+    .card, table {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+    .card { padding: 16px; }
+    h1, h2, h3 { margin-top: 0; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      overflow: hidden;
+    }
+    th, td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+      vertical-align: top;
+      font-size: 14px;
+    }
+    th {
+      color: var(--muted);
+      font-weight: 600;
+      background: rgba(255,255,255,0.02);
+    }
+    tr:last-child td { border-bottom: 0; }
+    .tag {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 3px 8px;
+      font-size: 12px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .tag-ok { color: var(--ok); border-color: rgba(16,185,129,0.35); }
+    .tag-fail { color: var(--fail); border-color: rgba(239,68,68,0.35); }
+    .tag-partial { color: var(--warn); border-color: rgba(245,158,11,0.35); }
+    .section { margin-top: 28px; }
+    code {
+      background: rgba(255,255,255,0.06);
+      padding: 2px 6px;
+      border-radius: 6px;
+    }
+    .empty {
+      padding: 18px;
+      border: 1px dashed var(--border);
+      border-radius: 12px;
+      color: var(--muted);
+      background: rgba(255,255,255,0.02);
+    }
+    .kpi {
+      font-size: 28px;
+      font-weight: 700;
+    }
+    .search {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+    .search input, .search button {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font: inherit;
+    }
+    .search button { cursor: pointer; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap topbar">
+      <div>
+        <div style="font-weight:700;">nfl-rag-db</div>
+        <div class="muted" style="font-size: 13px;">read-only web foundation</div>
+      </div>
+      <nav>
+        <a href="/dashboard">Dashboard</a>
+        <a href="/datasets">Datasets</a>
+        <a href="/runs">Runs</a>
+        <a href="/seasons">Seasons</a>
+        <a href="/teams">Teams</a>
+        <a href="/players">Players</a>
+        <a href="/docs">API Docs</a>
+      </nav>
+    </div>
+  </header>
+  <main>
+    <div class="wrap">
+      <h1>{{ title }}</h1>
+      <p class="muted">DB: <code>{{ db_path }}</code></p>
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+</body>
+</html>

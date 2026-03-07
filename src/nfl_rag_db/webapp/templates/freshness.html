@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+{% if freshness %}
+<table>
+  <thead>
+    <tr><th>Tabelle</th><th>Rows</th><th>Prev</th><th>Delta</th><th>Captured</th><th>Component</th><th>Outcome</th><th>Note</th></tr>
+  </thead>
+  <tbody>
+    {% for row in freshness %}
+    <tr>
+      <td><code>{{ row.table_fqn }}</code></td>
+      <td>{{ row.row_count }}</td>
+      <td>{{ row.previous_row_count if row.previous_row_count is not none else 'n/a' }}</td>
+      <td>
+        {% if row.delta_row_count is none %}
+          <span class="num-neutral">n/a</span>
+        {% elif row.delta_row_count > 0 %}
+          <span class="num-pos">+{{ row.delta_row_count }}</span>
+        {% elif row.delta_row_count < 0 %}
+          <span class="num-neg">{{ row.delta_row_count }}</span>
+        {% else %}
+          <span class="num-neutral">0</span>
+        {% endif %}
+      </td>
+      <td>{{ row.captured_at }}</td>
+      <td><code>{{ row.component or '' }}</code></td>
+      <td>
+        <span class="tag {% if row.outcome == 'ok' %}tag-ok{% elif row.outcome == 'fail' %}tag-fail{% else %}tag-partial{% endif %}">
+          {{ row.outcome or 'n/a' }}
+        </span>
+      </td>
+      <td>{{ row.note or '' }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty">`audit.ingest_table_stat` ist nicht vorhanden oder leer.</div>
+{% endif %}
+{% endblock %}

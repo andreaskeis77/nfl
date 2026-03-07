@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="grid">
+  <div class="card">
+    <div class="muted">Player ID</div>
+    <div style="font-size: 18px; font-weight: 700;">{{ player.player_id }}</div>
+  </div>
+  <div class="card">
+    <div class="muted">Name</div>
+    <div style="font-size: 22px; font-weight: 700;">{{ player.player_name }}</div>
+  </div>
+  <div class="card">
+    <div class="muted">Team</div>
+    <div style="font-size: 22px; font-weight: 700;">
+      {% if player.team_code %}
+        <a href="/teams/{{ player.team_code|urlencode }}">{{ player.team_code }}</a>
+      {% endif %}
+    </div>
+  </div>
+  <div class="card">
+    <div class="muted">Position</div>
+    <div class="kpi">{{ player.position or "" }}</div>
+  </div>
+  <div class="card">
+    <div class="muted">Seasons sichtbar</div>
+    <div class="kpi">{{ player.seasons_visible or 0 }}</div>
+  </div>
+  <div class="card">
+    <div class="muted">Weekly rows</div>
+    <div class="kpi">{{ player.weekly_rows or 0 }}</div>
+  </div>
+  <div class="card">
+    <div class="muted">Latest visible week</div>
+    <div class="kpi">{% if player.latest_season is not none %}{{ player.latest_season }}{% if player.latest_week is not none %}/{{ player.latest_week }}{% endif %}{% endif %}</div>
+  </div>
+</div>
+
+<div class="section subgrid">
+  <div>
+    <h2>Season Summary</h2>
+    {% if season_summary_rows %}
+    <table>
+      <thead>
+        <tr>
+          {% for column in season_summary_columns %}
+          <th>{{ column }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in season_summary_rows %}
+        <tr>
+          {% for value in row %}
+          <td>{{ value }}</td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty">Keine Season Summary sichtbar.</div>
+    {% endif %}
+  </div>
+  <div>
+    <h2>Aggregierte Stat Totals</h2>
+    {% if stat_totals %}
+    <table>
+      <thead>
+        <tr><th>Metrik</th><th>Wert</th></tr>
+      </thead>
+      <tbody>
+        {% for row in stat_totals %}
+        <tr><td>{{ row.label }}</td><td>{{ row.value }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty">Keine aggregierten Stat Totals sichtbar.</div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="section">
+  <h2>Weekly Detail</h2>
+  {% if weekly_rows %}
+  <table>
+    <thead>
+      <tr>
+        {% for column in weekly_columns %}
+        <th>{{ column }}</th>
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in weekly_rows %}
+      <tr>
+        {% for value in row %}
+        <td>{{ value }}</td>
+        {% endfor %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty">Keine Weekly Player Stats sichtbar.</div>
+  {% endif %}
+</div>
+{% endblock %}

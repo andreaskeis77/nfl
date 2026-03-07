@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block content %}
+{% if game %}
+<div class="grid">
+  <div class="card">
+    <div class="muted">Game ID</div>
+    <div style="font-size: 18px; font-weight: 700;"><code>{{ game.game_id }}</code></div>
+  </div>
+  <div class="card">
+    <div class="muted">Season / Week</div>
+    <div style="font-size: 18px; font-weight: 700;">{{ game.season }}{% if game.week is not none %} / {{ game.week }}{% endif %}</div>
+  </div>
+  <div class="card">
+    <div class="muted">Matchup</div>
+    <div style="font-size: 18px; font-weight: 700;">{{ game.away_team }} @ {{ game.home_team }}</div>
+  </div>
+  <div class="card">
+    <div class="muted">Score</div>
+    <div class="kpi">{{ game.away_score if game.away_score is not none else "" }}{% if game.away_score is not none or game.home_score is not none %} - {% endif %}{{ game.home_score if game.home_score is not none else "" }}</div>
+  </div>
+</div>
+
+<div class="section subgrid">
+  <div>
+    <h2>Teams</h2>
+    <table>
+      <thead>
+        <tr><th>Role</th><th>Team</th><th>Name</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Away</td>
+          <td><a href="/teams/{{ game.away_team|urlencode }}">{{ game.away_team }}</a></td>
+          <td>{{ game.away_team_name }}</td>
+        </tr>
+        <tr>
+          <td>Home</td>
+          <td><a href="/teams/{{ game.home_team|urlencode }}">{{ game.home_team }}</a></td>
+          <td>{{ game.home_team_name }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div>
+    <h2>Week Player Preview</h2>
+    {% if player_week_rows %}
+    <table>
+      <thead>
+        <tr>
+          {% for column in player_week_columns %}
+          <th>{{ column }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in player_week_rows %}
+        <tr>
+          {% for value in row %}
+          <td>{{ value }}</td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty">Keine week-spezifische Player-Vorschau sichtbar.</div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="section">
+  <h2>Play-by-Play Vorschau</h2>
+  {% if pbp_rows %}
+  <table>
+    <thead>
+      <tr>
+        {% for column in pbp_columns %}
+        <th>{{ column }}</th>
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in pbp_rows %}
+      <tr>
+        {% for value in row %}
+        <td>{{ value }}</td>
+        {% endfor %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty">Keine PBP-Vorschau für dieses Spiel sichtbar.</div>
+  {% endif %}
+</div>
+{% else %}
+<div class="empty">Game nicht gefunden.</div>
+{% endif %}
+{% endblock %}

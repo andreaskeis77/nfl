@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+<form class="search" method="get">
+  <input type="search" name="q" value="{{ query }}" placeholder="Player-ID oder Name suchen">
+  <input type="number" name="limit" value="{{ limit }}" min="1" max="1000">
+  <button type="submit">Suchen</button>
+</form>
+
+<div class="section">
+  {% if players %}
+  <table>
+    <thead>
+      <tr><th>Player</th><th>Team</th><th>Pos</th><th>Seasons</th><th>Latest</th><th>Weekly rows</th></tr>
+    </thead>
+    <tbody>
+      {% for row in players %}
+      <tr>
+        <td><a href="/players/{{ row.player_id|urlencode }}">{{ row.player_name }}</a><br><span class="muted"><code>{{ row.player_id }}</code></span></td>
+        <td>
+          {% if row.team_code %}
+            <a href="/teams/{{ row.team_code|urlencode }}">{{ row.team_code }}</a>
+          {% endif %}
+        </td>
+        <td>{{ row.position or "" }}</td>
+        <td>{{ row.seasons_visible if row.seasons_visible is not none else "" }}</td>
+        <td>
+          {% if row.latest_season is not none %}
+            {{ row.latest_season }}
+            {% if row.latest_week is not none %}/{{ row.latest_week }}{% endif %}
+          {% endif %}
+        </td>
+        <td>{{ row.weekly_rows if row.weekly_rows is not none else "" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty">Keine Playerdaten sichtbar.</div>
+  {% endif %}
+</div>
+{% endblock %}

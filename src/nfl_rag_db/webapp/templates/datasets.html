@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="section">
+  <h2>Logical Coverage</h2>
+  <table>
+    <thead>
+      <tr><th>Dataset</th><th>Status</th><th>Tabelle</th><th>Rows</th><th>Audit Rows</th><th>Last Seen</th></tr>
+    </thead>
+    <tbody>
+      {% for row in coverage.datasets %}
+      <tr>
+        <td>{{ row.label }}</td>
+        <td>
+          <span class="tag {% if row.present %}tag-ok{% else %}tag-fail{% endif %}">
+            {% if row.present %}present{% else %}missing{% endif %}
+          </span>
+        </td>
+        <td>{% if row.fqn %}<code>{{ row.fqn }}</code>{% endif %}</td>
+        <td>{{ row.current_rows if row.current_rows is not none else "" }}</td>
+        <td>{{ row.audited_rows if row.audited_rows is not none else "" }}</td>
+        <td>{{ row.last_seen or "" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="section">
+  <h2>Physische Tabellen</h2>
+  {% if tables %}
+  <table>
+    <thead>
+      <tr><th>Schema</th><th>Tabelle</th><th>FQN</th><th>Spalten</th><th>Rows</th></tr>
+    </thead>
+    <tbody>
+      {% for row in tables %}
+      <tr>
+        <td><code>{{ row.schema }}</code></td>
+        <td><code>{{ row.table }}</code></td>
+        <td><code>{{ row.fqn }}</code></td>
+        <td>{{ row.columns }}</td>
+        <td>{{ row.rows if row.rows is not none else "n/a" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty">Keine Tabellen in `audit`, `stg` oder `core` gefunden.</div>
+  {% endif %}
+</div>
+{% endblock %}

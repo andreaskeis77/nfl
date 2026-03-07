@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+{% if seasons %}
+<table>
+  <thead>
+    <tr><th>Season</th><th>Type</th><th>Week</th><th>Games</th></tr>
+  </thead>
+  <tbody>
+    {% for row in seasons %}
+    <tr>
+      <td><a href="/seasons/{{ row.season }}">{{ row.season }}</a></td>
+      <td>{{ row.season_type or "" }}</td>
+      <td><a href="/seasons/{{ row.season }}/weeks/{{ row.week }}">{{ row.week }}</a></td>
+      <td>{{ row.games }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty">Keine browsebaren Season-/Week-Daten gefunden.</div>
+{% endif %}
+{% endblock %}

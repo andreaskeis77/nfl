@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="grid">
+  <div class="card">
+    <div class="muted">Teamcode</div>
+    <div class="kpi">{{ team.team_code }}</div>
+  </div>
+  <div class="card">
+    <div class="muted">Name</div>
+    <div style="font-size: 22px; font-weight: 700;">{{ team.team_name }}</div>
+  </div>
+  <div class="card">
+    <div class="muted">Games sichtbar</div>
+    <div class="kpi">{{ team.games_visible }}</div>
+  </div>
+  <div class="card">
+    <div class="muted">Players sichtbar</div>
+    <div class="kpi">{{ team.players_visible }}</div>
+  </div>
+  <div class="card">
+    <div class="muted">Weeks sichtbar</div>
+    <div class="kpi">{{ summary.weeks_visible or team.weeks_visible or 0 }}</div>
+  </div>
+  <div class="card">
+    <div class="muted">Seasons sichtbar</div>
+    <div class="kpi">{{ summary.seasons_visible or 0 }}</div>
+  </div>
+</div>
+
+<div class="section subgrid">
+  <div>
+    <h2>Letzte Spiele</h2>
+    {% if recent_games %}
+    <table>
+      <thead>
+        <tr><th>Season</th><th>Week</th><th>Matchup</th><th>Score</th><th>Game ID</th></tr>
+      </thead>
+      <tbody>
+        {% for row in recent_games %}
+        <tr>
+          <td>{{ row.season }}</td>
+          <td>{{ row.week }}</td>
+          <td>{{ row.away_team }} @ {{ row.home_team }}</td>
+          <td>
+            {% if row.away_score is not none or row.home_score is not none %}
+              {{ row.away_score if row.away_score is not none else "" }} - {{ row.home_score if row.home_score is not none else "" }}
+            {% endif %}
+          </td>
+          <td>{% if row.game_id %}<a href="/games/{{ row.game_id|urlencode }}"><code>{{ row.game_id }}</code></a>{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty">Keine Game-Daten für dieses Team sichtbar.</div>
+    {% endif %}
+  </div>
+  <div>
+    <h2>Roster / Players Preview</h2>
+    {% if roster_preview %}
+    <table>
+      <thead>
+        <tr><th>Player</th><th>Name</th><th>Position</th></tr>
+      </thead>
+      <tbody>
+        {% for row in roster_preview %}
+        <tr>
+          <td><a href="/players/{{ row.player_id|urlencode }}">{{ row.player_id }}</a></td>
+          <td>{{ row.player_name }}</td>
+          <td>{{ row.position or "" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty">Keine Player-/Roster-Vorschau für dieses Team sichtbar.</div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="section subgrid">
+  <div>
+    <h2>Weekly Team Stats</h2>
+    {% if weekly_rows %}
+    <table>
+      <thead>
+        <tr>
+          {% for column in weekly_columns %}
+          <th>{{ column }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in weekly_rows %}
+        <tr>
+          {% for value in row %}
+          <td>{{ value }}</td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty">Keine Team Week Stats sichtbar.</div>
+    {% endif %}
+  </div>
+  <div>
+    <h2>Player Leaders</h2>
+    {% if player_leaders %}
+      {% for metric in player_leaders %}
+      <h3>{{ metric.label }}</h3>
+      <table style="margin-bottom: 12px;">
+        <thead>
+          <tr><th>Player</th><th>Wert</th></tr>
+        </thead>
+        <tbody>
+          {% for leader in metric.leaders %}
+          <tr>
+            <td><a href="/players/{{ leader.player_id|urlencode }}">{{ leader.player_name }}</a></td>
+            <td>{{ leader.value }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% endfor %}
+    {% else %}
+    <div class="empty">Keine Player-Leader ableitbar.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

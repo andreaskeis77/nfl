@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="grid">
+  <div class="card">
+    <div class="muted">Season</div>
+    <div class="kpi">{{ season }}</div>
+  </div>
+  <div class="card">
+    <div class="muted">Weeks sichtbar</div>
+    <div class="kpi">{{ summary.weeks_visible }}</div>
+  </div>
+  <div class="card">
+    <div class="muted">Games sichtbar</div>
+    <div class="kpi">{{ summary.games_visible }}</div>
+  </div>
+  <div class="card">
+    <div class="muted">Season Types</div>
+    <div style="font-size: 18px; font-weight: 700;">{{ summary.season_types|join(', ') if summary.season_types else 'n/a' }}</div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>Weeks</h2>
+  {% if weeks %}
+  <table>
+    <thead>
+      <tr><th>Week</th><th>Type</th><th>Games</th></tr>
+    </thead>
+    <tbody>
+      {% for row in weeks %}
+      <tr>
+        <td><a href="/seasons/{{ season }}/weeks/{{ row.week }}">{{ row.week }}</a></td>
+        <td>{{ row.season_type or "" }}</td>
+        <td>{{ row.games }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty">Für diese Season sind keine Weeks sichtbar.</div>
+  {% endif %}
+</div>
+{% endblock %}
