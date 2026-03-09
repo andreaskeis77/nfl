@@ -132,7 +132,6 @@ def test_latest_table_stats_supports_current_audit_schema(tmp_path):
                 (3, '2026-03-07 10:05:00', 'core.player_week_stats', 5, 'initial load');
             """
         )
-
         rows = dashboard_payload(con, db_path=str(db_path))["latest_table_stats"]
     finally:
         con.close()

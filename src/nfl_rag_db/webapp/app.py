@@ -10,11 +10,13 @@ from fastapi.templating import Jinja2Templates
 
 from nfl_rag_db.db import connect, default_db_path
 from nfl_rag_db.webapp.queries import (
+    coverage_overview,
     dashboard_payload,
     game_detail_payload,
     latest_runs,
-    list_tables,
+    latest_table_stats,
     list_players,
+    list_tables,
     list_teams,
     player_detail_payload,
     season_detail_payload,
@@ -99,6 +101,28 @@ def datasets(request: Request, db: str | None = Query(default=None)) -> HTMLResp
                 "tables": tables,
                 "coverage": payload["coverage"],
                 "latest_table_stats": payload["latest_table_stats"],
+            },
+        )
+    finally:
+        _close_quietly(con)
+
+
+@app.get("/freshness", response_class=HTMLResponse)
+def freshness(request: Request, db: str | None = Query(default=None)) -> HTMLResponse:
+    db_path = resolve_db_path(db)
+    con = connect(db_path)
+    try:
+        rows = latest_table_stats(con)
+        coverage = coverage_overview(con)
+        return templates.TemplateResponse(
+            request,
+            "freshness.html",
+            {
+                "title": "Freshness",
+                "request": request,
+                "db_path": db_path,
+                "freshness": rows,
+                "coverage": coverage,
             },
         )
     finally:
@@ -217,7 +241,11 @@ def game_detail(request: Request, game_id: str, db: str | None = Query(default=N
 
 
 @app.get("/teams", response_class=HTMLResponse)
-def teams(request: Request, db: str | None = Query(default=None), q: str | None = Query(default=None)) -> HTMLResponse:
+def teams(
+    request: Request,
+    db: str | None = Query(default=None),
+    q: str | None = Query(default=None),
+) -> HTMLResponse:
     db_path = resolve_db_path(db)
     con = connect(db_path)
     try:

@@ -10,7 +10,7 @@ def build_connection(db_path: Path):
     return duckdb.connect(str(db_path), read_only=True)
 
 
-def test_dashboard_and_datasets_smoke(monkeypatch, sample_db_path):
+def test_dashboard_datasets_and_freshness_smoke(monkeypatch, sample_db_path):
     monkeypatch.setattr(webapp_app, "connect", lambda db_path=None: build_connection(sample_db_path))
     monkeypatch.setattr(webapp_app, "default_db_path", lambda base_dir=None: Path(sample_db_path))
 
@@ -18,11 +18,16 @@ def test_dashboard_and_datasets_smoke(monkeypatch, sample_db_path):
 
     dashboard = client.get("/dashboard")
     datasets = client.get("/datasets")
+    freshness = client.get("/freshness")
 
     assert dashboard.status_code == 200
     assert datasets.status_code == 200
+    assert freshness.status_code == 200
+
     assert "Logical Coverage" in dashboard.text
     assert "core.pbp" in datasets.text
+    assert "Audit / Freshness" in freshness.text
+    assert "core.game" in freshness.text
 
 
 def test_season_week_game_routes(monkeypatch, sample_db_path):
@@ -40,6 +45,7 @@ def test_season_week_game_routes(monkeypatch, sample_db_path):
     assert season.status_code == 200
     assert week.status_code == 200
     assert game.status_code == 200
+
     assert "2024" in season.text
     assert "2024_01_DAL_NYG" in week.text
     assert "Play-by-Play Vorschau" in game.text
@@ -62,6 +68,7 @@ def test_team_and_player_routes(monkeypatch, sample_db_path):
     assert players.status_code == 200
     assert player.status_code == 200
     assert health.status_code == 200
+
     assert "Dallas Cowboys" in team.text
     assert "Dak Prescott" in player.text
     assert health.json()["ok"] is True
