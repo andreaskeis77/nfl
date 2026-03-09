@@ -1,11 +1,425 @@
-nfl-rag-db
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ title }} · nfl-rag-db</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: #121933;
+      --panel-alt: #17213f;
+      --panel-soft: #f7f8fc;
+      --line: #dbe2f0;
+      --line-strong: #a9b8d5;
+      --text: #152033;
+      --text-soft: #5b6780;
+      --text-invert: #eef3ff;
+      --brand: #275df5;
+      --brand-soft: #dfe7ff;
+      --ok: #177245;
+      --ok-soft: #dbf5e6;
+      --warn: #8b5a00;
+      --warn-soft: #fff1cc;
+      --fail: #a12626;
+      --fail-soft: #ffe0e0;
+      --shadow: 0 16px 40px rgba(16, 24, 40, 0.08);
+      --radius: 16px;
+      --radius-sm: 10px;
+      --content-width: 1420px;
+    }
 
-read-only web foundation
+    * {
+      box-sizing: border-box;
+    }
 
-[Dashboard](/dashboard) [Datasets](/datasets) [Freshness](/freshness) [Runs](/runs) [Seasons](/seasons) [Teams](/teams) [Players](/players) [API Docs](/docs)
+    html {
+      color-scheme: light;
+    }
 
-# {{ title }}
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background:
+        radial-gradient(circle at top right, rgba(39, 93, 245, 0.12), transparent 28%),
+        linear-gradient(180deg, #eef3ff 0%, #f5f7fb 240px, #f7f8fc 100%);
+      color: var(--text);
+      line-height: 1.5;
+    }
 
-DB: `{{ db_path }}`
+    a {
+      color: var(--brand);
+      text-decoration: none;
+    }
 
-{% block content %}{% endblock %}
+    a:hover {
+      text-decoration: underline;
+    }
+
+    code {
+      display: inline-block;
+      padding: 0.08rem 0.32rem;
+      border-radius: 6px;
+      background: #eef2fb;
+      color: #21304d;
+      font-family: "Cascadia Code", Consolas, "SFMono-Regular", monospace;
+      font-size: 0.92em;
+      word-break: break-word;
+    }
+
+    .app-shell {
+      max-width: var(--content-width);
+      margin: 0 auto;
+      padding: 28px 24px 48px;
+    }
+
+    .app-header {
+      background: linear-gradient(145deg, var(--bg), #18254a);
+      color: var(--text-invert);
+      border-radius: calc(var(--radius) + 4px);
+      box-shadow: var(--shadow);
+      padding: 28px;
+      margin-bottom: 18px;
+    }
+
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+
+    .eyebrow {
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: rgba(238, 243, 255, 0.76);
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+
+    .app-header h1 {
+      margin: 0;
+      font-size: clamp(1.8rem, 2.8vw, 2.55rem);
+      line-height: 1.1;
+    }
+
+    .lead {
+      margin: 10px 0 0;
+      max-width: 74ch;
+      color: rgba(238, 243, 255, 0.84);
+      font-size: 1rem;
+    }
+
+    .db-meta {
+      min-width: min(380px, 100%);
+      max-width: 100%;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 14px 16px;
+      color: rgba(238, 243, 255, 0.92);
+      backdrop-filter: blur(6px);
+    }
+
+    .db-meta .label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: rgba(238, 243, 255, 0.7);
+      font-weight: 700;
+    }
+
+    .db-meta code {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.12);
+      color: #ffffff;
+      padding: 0.42rem 0.58rem;
+      white-space: normal;
+    }
+
+    .page-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 22px;
+    }
+
+    .page-nav a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 38px;
+      padding: 0 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: rgba(238, 243, 255, 0.92);
+      text-decoration: none;
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.04);
+      transition: background 120ms ease, border-color 120ms ease, transform 120ms ease;
+    }
+
+    .page-nav a:hover {
+      background: rgba(255, 255, 255, 0.11);
+      border-color: rgba(255, 255, 255, 0.24);
+      transform: translateY(-1px);
+    }
+
+    .page-nav a.is-active {
+      background: #ffffff;
+      color: #152033;
+      border-color: #ffffff;
+    }
+
+    .page-content {
+      display: grid;
+      gap: 18px;
+    }
+
+    .section {
+      background: #ffffff;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px;
+    }
+
+    .section > h2,
+    .section > h3 {
+      margin: 0 0 14px;
+      line-height: 1.2;
+    }
+
+    .section-intro {
+      margin: 0 0 18px;
+      color: var(--text-soft);
+    }
+
+    .grid {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+
+    .subgrid {
+      display: grid;
+      gap: 18px;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    }
+
+    .card {
+      background: #ffffff;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px;
+      min-height: 120px;
+    }
+
+    .card h2,
+    .card h3 {
+      margin-top: 0;
+    }
+
+    .muted {
+      color: var(--text-soft);
+      font-size: 0.92rem;
+    }
+
+    .kpi {
+      font-size: clamp(1.8rem, 3vw, 2.4rem);
+      line-height: 1.08;
+      font-weight: 800;
+      margin-top: 8px;
+      color: var(--text);
+    }
+
+    .metric {
+      font-size: 1.08rem;
+      font-weight: 700;
+      margin-top: 8px;
+    }
+
+    .empty {
+      border: 1px dashed var(--line-strong);
+      border-radius: var(--radius-sm);
+      background: var(--panel-soft);
+      color: var(--text-soft);
+      padding: 14px 16px;
+    }
+
+    .search {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      background: #ffffff;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px;
+    }
+
+    .search input,
+    .search button,
+    .search select {
+      min-height: 42px;
+      border-radius: 10px;
+      border: 1px solid var(--line-strong);
+      font: inherit;
+    }
+
+    .search input,
+    .search select {
+      flex: 1 1 220px;
+      padding: 0 12px;
+      background: #ffffff;
+    }
+
+    .search button {
+      background: var(--brand);
+      border-color: var(--brand);
+      color: #ffffff;
+      font-weight: 700;
+      padding: 0 16px;
+      cursor: pointer;
+    }
+
+    .search button:hover {
+      filter: brightness(1.04);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: auto;
+      background: #ffffff;
+    }
+
+    thead th {
+      text-align: left;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-soft);
+      padding: 12px 10px;
+      border-bottom: 2px solid var(--line);
+      background: #f7f9fc;
+      position: sticky;
+      top: 0;
+    }
+
+    tbody td {
+      padding: 11px 10px;
+      border-bottom: 1px solid #edf1f7;
+      vertical-align: top;
+    }
+
+    tbody tr:hover {
+      background: #fafcff;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #ffffff;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 0 10px;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      line-height: 1;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+
+    .tag-ok {
+      color: var(--ok);
+      background: var(--ok-soft);
+      border-color: rgba(23, 114, 69, 0.18);
+    }
+
+    .tag-fail {
+      color: var(--fail);
+      background: var(--fail-soft);
+      border-color: rgba(161, 38, 38, 0.18);
+    }
+
+    .tag-partial {
+      color: var(--warn);
+      background: var(--warn-soft);
+      border-color: rgba(139, 90, 0, 0.18);
+    }
+
+    .page-footer {
+      margin-top: 14px;
+      color: var(--text-soft);
+      font-size: 0.9rem;
+      text-align: right;
+    }
+
+    @media (max-width: 860px) {
+      .app-shell {
+        padding: 18px 14px 30px;
+      }
+
+      .app-header {
+        padding: 20px;
+      }
+
+      .section,
+      .card,
+      .search {
+        padding: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  {% set current_path = request.url.path %}
+  <div class="app-shell">
+    <header class="app-header">
+      <div class="header-top">
+        <div>
+          <div class="eyebrow">nfl-rag-db</div>
+          <h1>{{ title }}</h1>
+          <p class="lead">Lokale, read-only NFL-Weboberfläche für Dateninventar, Audit, Browsing und Qualitätskontrolle auf Basis von DuckDB.</p>
+        </div>
+        <div class="db-meta">
+          <span class="label">Aktive Datenbank</span>
+          <code>{{ db_path }}</code>
+        </div>
+      </div>
+
+      <nav class="page-nav" aria-label="Hauptnavigation">
+        <a href="/dashboard" class="{% if current_path == '/dashboard' %}is-active{% endif %}">Dashboard</a>
+        <a href="/datasets" class="{% if current_path == '/datasets' %}is-active{% endif %}">Datasets</a>
+        <a href="/freshness" class="{% if current_path == '/freshness' %}is-active{% endif %}">Freshness</a>
+        <a href="/runs" class="{% if current_path == '/runs' %}is-active{% endif %}">Runs</a>
+        <a href="/seasons" class="{% if current_path.startswith('/seasons') %}is-active{% endif %}">Seasons</a>
+        <a href="/teams" class="{% if current_path.startswith('/teams') %}is-active{% endif %}">Teams</a>
+        <a href="/players" class="{% if current_path.startswith('/players') %}is-active{% endif %}">Players</a>
+        <a href="/docs">API Docs</a>
+      </nav>
+    </header>
+
+    <main class="page-content">
+      {% block content %}{% endblock %}
+    </main>
+
+    <div class="page-footer">
+      Read-only foundation · keine Schreiboperationen über die Weboberfläche
+    </div>
+  </div>
+</body>
+</html>

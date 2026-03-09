@@ -1,29 +1,29 @@
 # PROJECT_STATE
 
-Stand: 2026-03-07  
-Status: aktiv, frühe belastbare Plattformbasis vorhanden, aber noch keine fertige Produktoberfläche
+Stand: 2026-03-09  
+Status: aktiv, belastbare lokale Datenplattformbasis vorhanden; read-only Web-UI und Handoff-Analyse sind real, aber noch im Hardening
 
 ## 1. Executive Summary
 
-Das Projekt ist bereits klar als lokale NFL-Datenplattform erkennbar.  
-Es hat die Phase eines reinen Scaffolds überschritten, ist aber noch nicht in einer Form, in der die Daten für den Nutzer sichtbar und komfortabel nutzbar sind.
+Das Projekt ist klar über die reine Scaffold-Phase hinaus. Es besitzt eine funktionierende lokale DuckDB-Datenplattform mit Audit-/Run-Tracking, Ingestion-Bausteinen, Snapshot-/Handoff-Tooling sowie einer read-only Weboberfläche für Dateninventar, Freshness und Browse-Pfade.
 
 Stärken des aktuellen Stands:
 
 - klare Struktur unter `src/`, `tests/`, `tools/`, `docs/`
 - DuckDB-first ist per ADR gesetzt
 - Audit-/Run-Registry existiert
-- Player-Stats-Ingestion ist bereits substanziell
-- Snapshot-/Handoff-Tooling ist vorhanden
-- erster Test-Satz schützt zentrale Basisfunktionen
+- Ingestion-Bausteine sind vorhanden und testseitig abgesichert
+- Snapshot-/Handoff-Tooling ist vorhanden und wurde um einen umfassenderen Analyzer ergänzt
+- Query-Schicht und read-only Web-UI sind real vorhanden
+- Season-, Team- und Player-Browsing ist funktional angelegt
 
-Größte Lücken:
+Größte aktuelle Lücken:
 
-- README und Projektdokumentation waren bisher nicht auf Projektstand
-- keine explizite Dataset Registry / Freshness-Sicht
-- noch kein API- oder Web-Layer
-- Daten sind noch nicht “sichtbar”
-- Browse-Ziele (Season / Week / Game / Team / Player) sind noch nicht als Produkt realisiert
+- UI-Hardening und visuelle Konsolidierung statt weiterer Rohfunktionen
+- Dokumentation muss regelmäßig mit dem echten Stand synchron gehalten werden
+- JSON-/API-Erweiterungen fehlen noch als Produktschicht neben HTML
+- DQ-/Freshness-Modellierung ist noch eher implizit als explizit registriert
+- CI / reproduzierbare Gates / Setup-Härtung sind noch ausbaufähig
 
 ## 2. Verifizierter Repository-Stand
 
@@ -43,9 +43,14 @@ Vorhanden:
 Vorhanden:
 
 - `docs/reference/ENGINEERING_MANIFEST_v2.0.md`
+- `docs/reference/PROJECT_STATE.md`
+- `docs/reference/DATA_CATALOG.md`
+- `docs/reference/ROADMAP.md`
+- `docs/reference/UI_BACKLOG.md`
 - `docs/adr/ADR-0001-db-engine.md`
 - `docs/concepts/nfl_rag_db_concept_v0_2.md`
 - `docs/HANDOFF_MANIFEST.md`
+- Snapshot-/Handoff-Ausgaben unter `docs/_snapshot/...`
 
 ### 2.3 Python-Paketstruktur
 
@@ -66,18 +71,40 @@ Beobachtete Ingest-Unterpakete:
 - `src/nfl_rag_db/ingest/pbp.py`
 - `src/nfl_rag_db/ingest/player_stats.py`
 
-### 2.4 Tests
+### 2.4 Web- und Query-Schicht
+
+Vorhanden:
+
+- `src/nfl_rag_db/webapp/app.py`
+- `src/nfl_rag_db/webapp/queries.py`
+- Jinja-Templates unter `src/nfl_rag_db/webapp/templates/`
+
+Vorhandene Browse-/Audit-Seiten:
+
+- Dashboard
+- Datasets
+- Freshness
+- Runs
+- Seasons
+- Season Detail
+- Week Detail
+- Game Detail
+- Teams
+- Team Detail
+- Players
+- Player Detail
+
+### 2.5 Tests
 
 Beobachtet:
 
-- `tests/test_audit_log.py`
-- `tests/test_change_detection.py`
-- `tests/test_pbp_url.py`
-- `tests/test_player_stats_key_cols.py`
-- `tests/test_run_registry.py`
-- `tests/test_smoke.py`
+- Audit-/Run-/Change-Detection-Tests
+- Smoke-Tests
+- Web-Query-Tests
+- Web-App-Smoke-Tests
+- Handoff-Analyzer-Tests (falls der Analyzer-Bolt bereits eingespielt ist)
 
-### 2.5 Tooling
+### 2.6 Tooling
 
 Beobachtet:
 
@@ -89,6 +116,7 @@ Beobachtet:
 - `tools/project_tree_dump.py`
 - `tools/show_last_run.py`
 - `tools/source_bundle_dump.py`
+- `tools/handoff_analyze.py` als interpretierende Handoff-Erweiterung (falls eingespielt)
 
 ## 3. Technische Basis
 
@@ -111,141 +139,109 @@ Beobachtete funktionale Basis:
 - Run Registry mit `run_id`, Start/Ende, Outcome, Dauer, Params, Counts, Retry Count, Fehlerfeldern
 - Audit-Logging für Source Files
 - Audit-Logging für Tabellenstatistiken
-- Snapshot-Dumps für Daten- und DB-Überblick
+- Snapshot-Dumps für Daten-, DB- und Repo-Überblick
+- erweiterte Handoff-Analyse für Chat-Umzüge und Zustandsanalyse
 
-Das ist eine sehr gute Grundlage für spätere UI-Seiten wie:
+Diese Basis trägt bereits UI-Seiten wie:
 
 - letzte Läufe
 - Freshness
 - Rows pro Tabelle
-- fehlerhafte Läufe
-- Quell-Dateien pro Dataset
+- Quelle / Source
+- Snapshot- und Handoff-Analyse
 
 ### 3.3 Ingestion-Stand
 
-#### PBP
+Der Repository-Stand enthält Ingestion-Bausteine für:
 
-Der Repository-Stand enthält einen CLI-Entrypoint für PBP:
+- `nfldata`
+- `pbp`
+- `player_stats`
 
-- `python -m nfl_rag_db.ingest_pbp --season <YEAR>`
+Der Player-Stats-Ingest ist besonders weit ausgebaut:
 
-Die Business-Implementierung liegt unter:
-
-- `src/nfl_rag_db/ingest/pbp.py`
-
-#### Player Stats
-
-Der Player-Stats-Ingest ist bereits am weitesten:
-
-- Download eines Parquet-Snapshots
-- Ablage in `data/raw/player_stats/...`
+- Download eines Snapshots
+- Ablage in `data/raw/...`
 - Audit-Erfassung der Quelldatei
 - Laden nach `stg.player_stats`
-- Filter / incoming view
 - Change Detection gegenüber `core.player_week_stats`
 - Materialisierung von `core.player_week_stats`
 - Duplicate-Key-Prüfung
 - Finish Run mit Counts und Outcome
 
-## 4. Aktueller Datenmodell-Stand
+## 4. Aktueller Datenmodell- und Browse-Stand
 
-### 4.1 Nachweislich implementiert / belegt
+### 4.1 Nachweislich im Plattformkern relevant
+
+Audit:
 
 - `audit.ingest_run`
 - `audit.ingest_source_file`
 - `audit.ingest_table_stat`
-- `stg.player_stats`
+
+Logische Browse-Datasets / Query-Kandidaten:
+
+- `core.game`
+- `core.pbp`
+- `core.team`
 - `core.player_week_stats`
+- `core.team_week_stats`
+- `core.rosters` / `core.rosters_weekly`
 
-### 4.2 In Tooling / Konzept klar vorgesehen
+Wichtig: Nicht jede lokale DB muss jederzeit alle dieser Tabellen enthalten. Die Query- und Browse-Schicht ist deshalb bewusst tolerant gegenüber Varianten und fehlenden Tabellen aufgebaut.
 
-- `core.pbp` (im Snapshot-Tool explizit berücksichtigt)
-- weitere `core.*`-Tabellen laut Konzept v0.2:
-  - `game`
-  - `game_result`
-  - `play`
-  - `scoring_event`
-  - `team`
-  - `venue`
-  - `person`
-  - `roster_membership`
-  - weitere kategorisierte Player-/Game-Stats
+### 4.2 Read-only Web-Produktstand
 
-## 5. Produktlücke
+Die Produktoberfläche ist vorhanden, aber noch nicht fertig ausdesignt. Sie kann heute schon reale Nutzerfragen beantworten wie:
 
-Die größte aktuelle Lücke ist nicht der reine Daten-Load, sondern die fehlende Produktoberfläche.
+- Welche Tabellen und logischen Datasets sind sichtbar?
+- Welche Audit-Stats und Runs liegen vor?
+- Welche Seasons / Weeks / Games sind browsebar?
+- Welche Teams und Players sind sichtbar?
 
-Im Moment existiert bereits viel interne Substanz, aber kaum Sichtbarkeit für den Nutzer:
+Das ist funktional ein großer Schritt über den alten Stand „Daten vorhanden, aber unsichtbar“ hinaus.
 
-- Wie viele Tabellen gibt es?
-- Wie viele Rows enthält jede Tabelle?
-- Welche Seasons / Weeks sind geladen?
-- Welche Quellen wurden zuletzt aktualisiert?
-- Welche Läufe waren erfolgreich oder fehlgeschlagen?
-- Welche Datensätze fehlen noch?
+## 5. Hauptrisiken und Drift-Signale
 
-Genau hier muss die nächste Phase ansetzen.
+Die größten Risiken liegen aktuell weniger im nackten Datenladen als in Konsistenz und Hardening:
+
+- UI-Regressionsrisiko im Template-Layer
+- Doku-Drift zwischen Repo-Text und echtem Code-Stand
+- unterschiedliche reale DB-Stände vs. vereinfachte Test-Fixtures
+- Gefahr, Query-/UI-Logik still gegen das Testschema statt gegen echte Audit-/Core-Tabellen zu optimieren
+- Snapshot-/Handoff-Prozess muss konsequent genutzt werden, sonst geht Wissen beim Chat-Wechsel verloren
 
 ## 6. Priorisierte nächste Zielarchitektur
 
 ### 6.1 Kurzfristig
 
-1. Projektdokumentation vollständig und ehrlich halten
-2. Dataset Inventory und Freshness explizit modellieren
-3. kleines read-only Webinterface bauen
-4. Browse-Queries als stabile interne Query-Schicht definieren
+- UI-Schale stabilisieren und Regressionen verhindern
+- Dashboard / Datasets / Freshness / Runs sauber rendern
+- README und Projektdoku konsequent auf den echten Stand ziehen
+- Handoff-Analyzer als festen Schritt vor neuen Chats etablieren
 
 ### 6.2 Mittelfristig
 
-1. `games`, `teams`, `players`, `rosters_weekly`, `team_week_stats` ergänzen
-2. UI-orientierte Views / `mart.*`-Tabellen aufbauen
-3. Audit / Freshness / DQ stärker systematisieren
-4. CI und Hardening ergänzen
+- Game-Detailseiten fachlich vertiefen
+- Team-/Roster-/Season-Bezüge ausbauen
+- JSON-API ergänzend zum HTML-UI anbieten
+- Coverage-/Inventory-Metriken expliziter modellieren
+- Dataset-Freshness und DQ-Checks stärker formalisieren
 
-## 7. Empfohlener nächster Meilenstein
+### 6.3 Danach
 
-## M1 — “Data Visibility Foundation”
+- weitere Datenquellen: Injuries, Coaches, Venues, Weather
+- CI / Setup-Härtung / reproduzierbare Gates
+- mart-/view-orientierte Schicht für Retrieval, RAG und APIs
 
-Ziel:
-Die vorhandenen Daten und Audit-Informationen erstmals sichtbar machen.
+## 7. Arbeitsmodus / Engineering Defaults
 
-Scope:
+Für die nächsten Bolts gilt:
 
-- API-/Web-Startpunkt
-- Dashboard
-- Dataset Inventory
-- Latest Runs / Audit Summary
-- Seasons / Weeks / Games Grundnavigation
-
-Acceptance Criteria:
-
-- Start der Web-App lokal möglich
-- Dashboard zeigt:
-  - DB-Pfad
-  - Tabellen pro Schema
-  - Rows pro Tabelle
-  - letzte Ingest Runs
-- Dataset-Seite listet alle aktuellen Tabellen mit Row Counts
-- Season Browser zeigt geladene Seasons / Weeks / Games
-- Tests decken mindestens die Query-Layer-Basis und einen UI-Smoke-Path ab
-
-## 8. Offene Architekturfragen
-
-Noch bewusst offen bzw. noch nicht finalisiert:
-
-- Query-/UI-Layer: reine API oder API + server-rendered HTML
-- `mart.*`-Tabellen vs. reine Views
-- explizite Dataset Registry in `control.*`
-- paralleles Lesen/Schreiben rund um DuckDB
-- Orchestrierungsmodell für mehrere Ingestoren
-- CI / Packaging / Lockfile / Typechecking-Strategie
-
-## 9. Projektregeln für die nächsten Änderungen
-
-Für alle kommenden Bolts gilt:
-
-- kleine End-to-End-Schritte
-- komplette Dateien liefern, keine halben Fragmente
-- bei Code immer Tests mitliefern
-- Project State nach Meilenstein aktualisieren
-- keine stillen Architekturwechsel ohne ADR
+- kleine, vertikale, testbare Bolts
+- keine großen Umbauten ohne grünes Gate
+- Dateien komplett liefern, nicht als Diff-Fragmente
+- bei Codeänderungen immer passende Tests
+- Browser-/Smoke-Check nach Web-Änderungen
+- Snapshot-/Handoff-Lauf vor Chat-Wechseln
+- keine stillen Architekturwechsel ohne Doku-/ADR-Nachzug

@@ -1,72 +1,108 @@
 # UI_BACKLOG
 
-Stand: 2026-03-07  
-Ziel: erste nutzbare read-only Weboberfläche für die lokale NFL-Datenplattform
+Stand: 2026-03-09  
+Ziel: die vorhandene read-only Weboberfläche schrittweise zu einer stabilen, nützlichen Explorationsoberfläche ausbauen
 
 ## Produktprinzipien
 
 - read-only zuerst
 - lokale Nutzung zuerst
-- Übersicht vor Schönheit
-- schnelle Drilldowns statt schwerer Monolith-Seiten
-- jede UI-Seite muss direkt auf reale Daten- oder Audit-Fragen antworten
+- Sichtbarkeit vor Overengineering
+- robuste Drilldowns statt schwerer Monolith-Seiten
+- jede UI-Seite muss auf reale Daten-, Audit- oder Freshness-Fragen antworten
+- Template-/Layout-Qualität ist Teil der Funktionalität
 
 ---
 
-## Release 0 — Foundation
+## Bereits vorhandene Flächen
 
-### 1. Dashboard
+Heute bereits angelegt bzw. vorhanden:
 
-**Nutzen:** Sofort sehen, ob die Plattform “lebt”.
+- Dashboard
+- Datasets
+- Freshness
+- Runs
+- Seasons
+- Season Detail
+- Week Detail
+- Game Detail
+- Teams
+- Team Detail
+- Players
+- Player Detail
+
+Die UI ist damit funktional über die Foundation-Phase hinaus, aber noch nicht überall produktreif ausformuliert.
+
+---
+
+## Release 0 — UI-Basis stabilisieren
+
+### 1. HTML-Schale / Navigation / Layout
+
+**Nutzen:** Die Oberfläche soll jederzeit als echte Webanwendung lesbar bleiben und nicht in Rohtext/Markdown zurückfallen.
 
 #### Inhalte
 
-- DB-Pfad
-- DB-Dateigröße
-- Anzahl Tabellen pro Schema
-- Row Counts der wichtigsten `core`-Tabellen
-- letzte erfolgreichen und fehlgeschlagenen Runs
-- sichtbare Freshness-Indikatoren
-- ggf. schnelle KPI-Karten:
-  - Tabellenzahl
-  - letzte erfolgreiche Ingestion
-  - Anzahl auditierter Runs
-  - Anzahl Raw-Dateien
+- echtes HTML-Layout in `base.html`
+- konsistente Navigation
+- Basis-Styling für Karten, Tabellen, Tags, Suchformulare
+- lesbare Anzeige von DB-Pfad und Seitentitel
 
 #### Acceptance Criteria
 
-- Seite lädt auch bei wenig Daten robust
-- keine Exception bei fehlenden Tabellen
-- “leere Datenbank” wird als gültiger Zustand verständlich angezeigt
+- kein Rohtext-Rendering von Markdown-artigen Links
+- Dashboard / Datasets / Freshness / Runs rendern stabil
+- Smoke-Test schützt gegen diesen Regressionsfall
 
 ---
 
-### 2. Dataset Inventory
+### 2. Dashboard
+
+**Status:** vorhanden, weiter zu härten
+
+**Nutzen:** Sofort sehen, ob die Plattform „lebt“.
+
+#### Inhalte
+
+- Anzahl Tabellen / Schemas
+- logische Coverage
+- letzte erfolgreiche Ingestion
+- letzte Audit Table Stats
+- letzte Runs
+- Season / Week Überblick
+
+#### Nächste Verbesserungen
+
+- bessere KPI-Gruppierung
+- klickbare Deep Links auf relevante Detailseiten
+- evtl. zusätzliche Health-/Warning-Signale
+
+---
+
+### 3. Datasets
+
+**Status:** vorhanden, weiter zu härten
 
 **Nutzen:** Welche Daten habe ich überhaupt?
 
 #### Inhalte
 
-- Schema
-- Tabellenname
-- Row Count
-- letzte Änderung / letzte erfolgreiche Ingestion
-- Quelle
-- kurze Beschreibung / Grain
-- Status:
-  - implemented
-  - partial
-  - planned
+- logische Coverage
+- physische Tabellen
+- Row Counts
+- Last Seen / Audit Rows
 
-#### Acceptance Criteria
+#### Nächste Verbesserungen
 
-- Inventar basiert nicht auf hardcodierter Liste allein
-- Tabellen aus `information_schema` können angezeigt werden
-- Metadaten aus Registry können später ergänzt werden
+- Dataset-Beschreibungen / Grain
+- Quelle / Herkunft direkter sichtbar
+- evtl. Verlinkung zu Freshness / DQ
 
 ---
 
-### 3. Latest Runs / Audit
+### 4. Runs / Audit
+
+**Status:** vorhanden, weiter zu härten
 
 **Nutzen:** Welche Ingests liefen wann und mit welchem Ergebnis?
 
@@ -79,129 +115,107 @@ Ziel: erste nutzbare read-only Weboberfläche für die lokale NFL-Datenplattform
 - `duration_ms`
 - Counts
 - Fehlerklasse / Fehlertext
+
+#### Nächste Verbesserungen
+
 - Drilldown zu verarbeiteten Source Files
-
-#### Acceptance Criteria
-
-- auch leere Audit-Tabelle wird sauber behandelt
-- fehlgeschlagene Läufe sind visuell erkennbar
-- Counts werden lesbar formatiert
+- visuelle Gruppierung erfolgreicher vs. fehlerhafter Läufe
+- evtl. Filter auf Component / Zeitraum
 
 ---
 
-## Release 1 — Browsebare Saison-Navigation
+### 5. Freshness
 
-### 4. Season Browser
+**Status:** vorhanden, aktuell Fokusbereich
+
+**Nutzen:** Sehen, welche Tabellen und logischen Datasets zuletzt sichtbar waren.
+
+#### Inhalte
+
+- letzter Audit-Stand je Tabelle
+- Delta Row Count
+- Component / Source / Note
+- Coverage-Zusammenfassung
+- fehlende logische Datasets
+
+#### Nächste Verbesserungen
+
+- Dataset-spezifische Freshness-Cadence
+- explizite Freshness-Statuslogik
+- Verknüpfung zu DQ-Signalen
+
+---
+
+## Release 1 — Browsebare Saison-Navigation vertiefen
+
+### 6. Seasons / Weeks / Games
+
+**Status:** vorhanden, fachlich ausbaufähig
 
 **Nutzen:** Einstieg in die Daten aus Nutzersicht.
 
-#### Inhalte
+#### Nächste Verbesserungen
 
-- geladene Seasons
-- Weeks pro Season
-- Anzahl Games pro Week
-- Filter auf Season Type, falls verfügbar
+- Kickoff-/Datumsspalten sauberer integrieren
+- Status / Final Score robuster darstellen
+- Week-Listen und Game-Detail stärker verbinden
 
-#### Acceptance Criteria
+### 7. Game Detail
 
-- funktioniert mit minimalen `games`-/PBP-Grunddaten
-- Navigation bleibt auch bei fehlenden Weeks stabil
+**Status:** vorhanden, aber noch roh
 
----
+**Nutzen:** Ein einzelnes Spiel verständlich machen.
 
-### 5. Week / Game List
+#### Nächste Verbesserungen
 
-**Nutzen:** Spiele einer Woche direkt sehen.
-
-#### Inhalte
-
-- Home / Away
-- Datum / Kickoff
-- Status / Final Score
-- Link auf Game Detail
-
-#### Acceptance Criteria
-
-- Sortierung nach Kickoff
-- kein Template-SQL
-- fehlende Scores bei nicht finalen Spielen sauber dargestellt
-
----
-
-### 6. Game Detail
-
-**Nutzen:** Ein einzelnes Spiel verstehen.
-
-#### Inhalte
-
-- Grunddaten
-- Ergebnis
-- Scoring Timeline
-- wichtige Plays / PBP-Auszug
-- Basisinfos zu Teams
-
-#### Acceptance Criteria
-
-- funktioniert mit teilweise verfügbaren Daten
-- PBP und Score-Timeline sind klar getrennt
-- keine riesige unformatierte Datentabelle als erste Version
+- klarere Zusammenfassung oben
+- Scoring-/PBP-/Player-Preview sauberer strukturieren
+- keine „zu breite Rohdatentabelle“ als alleinige Darstellungsform
 
 ---
 
 ## Release 2 — Team- und Spieleransichten
 
-### 7. Team Page
+### 8. Team Page
+
+**Status:** vorhanden, ausbaufähig
 
 **Nutzen:** Teamfokussierte Exploration.
 
-#### Inhalte
+#### Nächste Verbesserungen
 
-- Stammdaten
-- Season Schedule
-- Saisonbilanz
-- Team Week Stats
-- Roster Snapshot
+- Schedule vs. Stats klarer trennen
+- Team-/Season-Bezüge stärker herausarbeiten
+- Roster-/Leader-Module verbessern
 
-#### Acceptance Criteria
+### 9. Player Page
 
-- URL stabil über Team-Abkürzung oder kanonische Team-ID
-- Stats und Schedule sind trennbar darstellbar
-
----
-
-### 8. Player Page
+**Status:** vorhanden, ausbaufähig
 
 **Nutzen:** Spielerstats browsebar machen.
 
-#### Inhalte
+#### Nächste Verbesserungen
 
-- Name / Team / Position
-- verfügbare Seasons
-- wöchentliche oder spielnahe Stats
-- Quick Links zu Team / Games
-
-#### Acceptance Criteria
-
-- große Tabellen paginierbar oder begrenzt
-- Filter nach Season vorhanden
-- leere oder partielle Datensätze werden robust gehandhabt
+- Filter nach Season
+- bessere Aggregationen / Leaders / Splits
+- Pagination oder Limits für große Tabellen
 
 ---
 
-## Release 3 — Betriebsoberfläche
+## Release 3 — Betriebsoberfläche und API
 
-### 9. Freshness View
+### 10. JSON-API ergänzend zum HTML-UI
 
-**Nutzen:** Sehen, welche Datasets aktuell sind.
+**Nutzen:** dieselben Daten auch maschinenlesbar nutzbar machen.
 
 #### Inhalte
 
-- Dataset
-- erwartete Update-Cadence
-- letzte erfolgreiche Aktualisierung
-- Freshness Status
+- Dashboard-JSON
+- Dataset-Inventory-JSON
+- Freshness-JSON
+- Browse-JSON für Seasons / Games / Teams / Players
 
-### 10. DQ / Warnings
+### 11. DQ / Warnings
 
 **Nutzen:** Datenprobleme sichtbar machen.
 
@@ -209,48 +223,30 @@ Ziel: erste nutzbare read-only Weboberfläche für die lokale NFL-Datenplattform
 
 - leere Tabellen
 - plötzliche Row-Count-Einbrüche
-- DQ-Check-Historie
 - bekannte Warnungen
+- ggf. DQ-Check-Historie
 
 ---
 
-## Technischer Ansatz
+## Nicht-Ziele der aktuellen UI-Stufe
 
-Empfohlen für die erste Iteration:
-
-- FastAPI als Backend
-- server-rendered HTML mit Templates
-- kleine, saubere Query-Schicht zwischen DB und UI
-- bewusst read-only
-
-### Warum so starten?
-
-Weil das Projekt zuerst Sichtbarkeit und robuste Browse-Pfade braucht, nicht sofort ein schweres Frontend-Framework.  
-Eine kleine serverseitige Oberfläche ist schneller, testbarer und näher an den Daten.
-
----
-
-## Nicht-Ziele der ersten UI
-
-Noch nicht Teil der ersten Stufe:
+Noch nicht Teil der aktuellen Stufe:
 
 - Login / Benutzerverwaltung
 - Write-Flows
 - komplexe Inline-Edits
-- aggressive Client-State-Architektur
+- schweres Frontend-Framework ohne klaren Bedarf
 - Diagramm-Overkill vor stabilen Datenmodellen
-- “perfektes Design” vor robuster Daten-Navigation
+- Schönheitsarbeit ohne fachlichen Nutzen
 
 ---
 
-## UI-Bolt-Reihenfolge
+## Konkrete UI-Bolt-Reihenfolge
 
-1. Dashboard
-2. Dataset Inventory
-3. Latest Runs / Audit
-4. Season Browser
-5. Week / Game List
-6. Game Detail
-7. Team Page
-8. Player Page
-9. Freshness / DQ
+1. UI-Schale / Layout-Regression absichern
+2. Dashboard polishen
+3. Datasets / Freshness / Runs konsolidieren
+4. Game Detail vertiefen
+5. Team- und Player-Drilldowns verbessern
+6. JSON-API ergänzen
+7. DQ-/Warning-Oberfläche ergänzen

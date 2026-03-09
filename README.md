@@ -1,6 +1,6 @@
 # nfl-rag-db
 
-Local, auditierbare NFL-Datenplattform auf Basis von DuckDB — mit Fokus auf reproduzierbare Ingestion, nachvollziehbare Datenherkunft, schrittweise Modellierung und einem späteren read-only Webinterface für Exploration, Browsing und Qualitätskontrolle.
+Lokale, auditierbare NFL-Datenplattform auf Basis von DuckDB — mit Fokus auf reproduzierbare Ingestion, nachvollziehbare Datenherkunft, schrittweise Modellierung und eine bereits vorhandene read-only Weboberfläche für Exploration, Browsing und Qualitätskontrolle.
 
 ## Zielbild
 
@@ -10,44 +10,49 @@ Dieses Repository baut keine isolierte Einmal-Pipeline, sondern eine belastbare 
 - klarer Raw → Staging → Core → Audit-Fluss
 - nachvollziehbare Runs, Quelldateien und Table-Stats
 - reproduzierbare Datenbestände auf dem lokalen Rechner
-- späteres Webinterface für:
+- read-only Weboberfläche für:
   - Dateninventar und Freshness
-  - Season / Week / Game Browsing
+  - Runs / Audit
+  - Season → Week → Game Browsing
   - Team- und Spieleransichten
-  - Audit- und Ingestion-Überblick
-- mittelfristig RAG-/Chat-Bridge auf Basis stabiler Core-Tabellen und dokumentierter Views
+- Handoff-/Snapshot-Tooling für Analyse, Chat-Umzüge und Projektübergaben
+- mittelfristig ergänzende JSON-/API- und RAG-Schicht auf Basis stabiler Core-Tabellen und dokumentierter Views
 
 ## Aktueller Stand
 
-Der aktuelle Repository-Stand zeigt bereits eine belastbare Basis, ist aber noch kein fertiges Produkt.
-
-Bereits vorhanden:
+Der aktuelle Repository-Stand hat die reine Scaffold-Phase klar verlassen. Bereits vorhanden sind:
 
 - Python-Paket unter `src/nfl_rag_db`
 - zentrale DuckDB-Anbindung (`db.py`)
 - Audit-/Run-Registry
 - Audit-Tabellen für Quelldateien und Tabellenstatistiken
-- PBP-CLI-Entrypoint
-- Player-Stats-Ingestion mit Raw-Snapshot, Staging, Core-Load und Change Detection
+- Ingestion-Bausteine für `nfldata`, `pbp` und `player_stats`
+- Query-Schicht und read-only FastAPI-/Jinja-Webapp unter `src/nfl_rag_db/webapp`
+- browsebare Seiten für:
+  - Dashboard
+  - Datasets
+  - Freshness
+  - Runs
+  - Seasons / Season Detail / Week Detail / Game Detail
+  - Teams / Team Detail
+  - Players / Player Detail
 - Snapshot-/Handoff-Tooling unter `tools/`
-- erster Test-Satz für Audit, Run Registry, PBP-URL, Player-Stats-Keying und Smoke
+- erweiterter Analyzer für umfassende Repo-/DB-/Docs-Handoffs
+- Tests für Audit, Run Registry, Change Detection, Web-Queries und UI-Smoke
 
-Noch nicht vorhanden bzw. noch nicht produktreif:
+Noch nicht fertig bzw. bewusst noch nicht ausgebaut:
 
-- vollständige README / aktuelle Projektdokumentation
-- expliziter Data Catalog für aktuelle Tabellen
-- Dataset Registry / Freshness Registry
-- API-Layer / Web-UI
-- browsebare Team-/Spieler-/Game-Seiten
-- CI/Workflow-Härtung
-- klar definierte `mart.*`- oder UI-orientierte Views
+- umfassende CI-/Workflow-Härtung
+- JSON-API zusätzlich zum HTML-UI
+- tiefer ausgebaute Game-Detailseiten und Drilldowns
+- explizite Dataset Registry / DQ-Historisierung als eigene Schicht
+- zusätzliche Datenquellen wie Injuries, Coaches, Venues, Weather
 
 ## Architektur in Kurzform
 
 ### 1. Raw Landing Zone
 
-Unveränderte Downloads werden unter `data/raw/...` abgelegt.  
-Beispielhaft sichtbar ist dies bereits für Player Stats.
+Unveränderte Downloads werden unter `data/raw/...` abgelegt.
 
 Ziele:
 
@@ -63,27 +68,41 @@ Ziele:
 
 - Dateiformate einlesen
 - Typisierung und technische Validierung
-- noch keine fachliche “Uminterpretation”
+- noch keine fachliche Uminterpretation
 
 ### 3. Core
 
 Kanonische, browsebare Tabellen im DuckDB-Schema `core`.
 
-Der aktuelle belegte Kern ist:
+Je nach Ingest-Stand bzw. DB-Inhalt nutzt die Web- und Query-Schicht insbesondere logische Datasets wie:
 
+- `core.game`
+- `core.pbp`
+- `core.team`
 - `core.player_week_stats`
-
-Mittelfristig sollen hier insbesondere `games`, `teams`, `players`, `rosters`, `pbp`, `team_week_stats` und abgeleitete Browse-/Mart-Views liegen.
+- `core.team_week_stats`
+- `core.rosters` / `core.rosters_weekly`
 
 ### 4. Audit
 
 Betriebs- und Nachvollziehbarkeitstabellen im Schema `audit`.
 
-Der aktuelle Stand umfasst bereits:
+Der aktuelle Plattformkern umfasst:
 
-- Ingest Runs
-- Source Files
-- Table Stats
+- `audit.ingest_run`
+- `audit.ingest_source_file`
+- `audit.ingest_table_stat`
+
+### 5. Read-only Weboberfläche
+
+Die Web-App liegt unter `src/nfl_rag_db/webapp/` und baut auf einer kleinen Query-Schicht auf.
+
+Produktziel der UI:
+
+- Daten sichtbar machen, nicht verändern
+- Audit/Freshness lesbar machen
+- Browse-Pfade für Season, Week, Game, Team und Player bereitstellen
+- leere oder partielle Daten robust behandeln
 
 ## Repository-Struktur
 
@@ -92,10 +111,12 @@ docs/
   adr/
   concepts/
   reference/
+  _snapshot/
   HANDOFF_MANIFEST.md
 
 src/nfl_rag_db/
   ingest/
+  webapp/
   audit_log.py
   change_detection.py
   db.py
@@ -148,6 +169,12 @@ pip install -e ".[dev]"
 pytest -q
 ```
 
+### Web-App lokal starten
+
+```bash
+python -m uvicorn nfl_rag_db.webapp.app:app --reload --app-dir src
+```
+
 ## Wichtige Konventionen
 
 ### Standard-DB-Pfad
@@ -175,6 +202,12 @@ run_id = ingest_player_stats(con, season_min=2011)
 print(run_id)
 ```
 
+### Beispiel: erweiterten Handoff-Analyzer starten
+
+```bash
+python .\tools\handoff_analyze.py --root . --db data/nfl.duckdb --max-bytes 1000000 --zip
+```
+
 ## Dokumentation
 
 Die wichtigsten projektinternen Dokumente sind:
@@ -186,27 +219,28 @@ Die wichtigsten projektinternen Dokumente sind:
 - `docs/reference/DATA_CATALOG.md`
 - `docs/reference/ROADMAP.md`
 - `docs/reference/UI_BACKLOG.md`
+- `docs/HANDOFF_MANIFEST.md`
+- `HANDOFF_ANALYSIS.md` (falls im Repo vorhanden)
+- `docs/_snapshot/latest/chat_handoff.md` nach einem Analyzer-Lauf
 
 ## Nächste priorisierte Schritte
 
-1. Dokumentation auf aktuellen Stand bringen
-2. Dataset Inventory + Freshness explizit modellieren
-3. erste read-only Weboberfläche bauen
-4. Browse-Achsen stabilisieren:
-   - Season → Week → Game
-   - Team
-   - Player
-5. Datenmodell gezielt erweitern:
+1. UI-Schale und Web-Polish stabilisieren
+2. Game-Detail und Drilldowns fachlich vertiefen
+3. JSON-API ergänzend zum HTML-UI bereitstellen
+4. Datenmodell gezielt erweitern:
    - `games`
    - `teams`
    - `players`
    - `rosters_weekly`
    - `team_week_stats`
    - `pbp`
+   - weitere Source-Erweiterungen wie Injuries / Venues / Weather
+5. Freshness / DQ expliziter modellieren
 6. Hardening:
    - Tests ausbauen
    - CI ergänzen
-   - klare Query-/UI-Schicht einziehen
+   - klare Query-/UI-Schicht weiter festigen
 
 ## Arbeitsmodus für die nächsten Bolts
 
@@ -215,5 +249,5 @@ Der empfohlene Arbeitsmodus ist:
 - kleine, vertikale End-to-End-Bolts
 - jede Änderung mit kompletter Datei, nicht als Diff-Fragment
 - bei Code immer begleitende Tests
-- nach jedem Meilenstein `PROJECT_STATE.md` aktualisieren
-- bei Architekturentscheidungen ADR nachziehen
+- nach jedem signifikanten Schritt Snapshot/Handoff aktualisieren
+- vor Chat-Wechseln den Analyzer laufen lassen und `docs/_snapshot/latest/chat_handoff.md` als Startdokument verwenden

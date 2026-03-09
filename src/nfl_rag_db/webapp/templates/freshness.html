@@ -1,22 +1,119 @@
 {% extends "base.html" %}
 {% block content %}
+<div class="grid">
+  <div class="card">
+    <div class="muted">Logische Datasets vorhanden</div>
+    <div class="kpi">
+      {% if coverage %}
+        {{ coverage.present_count }} / {{ coverage.total_count }}
+      {% else %}
+        n/a
+      {% endif %}
+    </div>
+    <div class="muted">
+      {% if coverage %}
+        {{ coverage.coverage_pct }}% Coverage
+      {% else %}
+        Keine Coverage-Daten sichtbar.
+      {% endif %}
+    </div>
+  </div>
+  <div class="card">
+    <div class="muted">Tabellen mit Audit-Stats</div>
+    <div class="kpi">{{ freshness|length }}</div>
+    <div class="muted">jeweils letzter bekannter Audit-Stand pro Tabelle</div>
+  </div>
+  <div class="card">
+    <div class="muted">Fehlende logische Datasets</div>
+    <div class="kpi">
+      {% if coverage %}
+        {{ coverage.missing|length }}
+      {% else %}
+        n/a
+      {% endif %}
+    </div>
+    <div class="muted">laut Coverage-Modell nicht aufgelöst</div>
+  </div>
+</div>
 
-## Audit / Freshness
+<div class="section">
+  <h2>Audit / Freshness</h2>
+  <p class="section-intro">Letzter bekannter Audit-Stand je physischer Tabelle aus <code>audit.ingest_table_stat</code>. Diese Seite ändert keine Daten und nutzt nur bereits vorhandene Audit-Informationen.</p>
 
-{% if coverage %}
-Coverage: {{ coverage.present_count }} / {{ coverage.total_count }} logical datasets ({{ coverage.coverage_pct }}%)
+  {% if freshness %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Tabelle</th>
+          <th>Rows</th>
+          <th>Delta</th>
+          <th>Captured</th>
+          <th>Component</th>
+          <th>Source</th>
+          <th>Note</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in freshness %}
+        <tr>
+          <td><code>{{ row.fqn }}</code></td>
+          <td>{{ row.row_count if row.row_count is not none else "n/a" }}</td>
+          <td>
+            {% if row.delta_row_count is none %}
+              <span class="tag tag-partial">n/a</span>
+            {% elif row.delta_row_count > 0 %}
+              <span class="tag tag-ok">+{{ row.delta_row_count }}</span>
+            {% elif row.delta_row_count < 0 %}
+              <span class="tag tag-fail">{{ row.delta_row_count }}</span>
+            {% else %}
+              <span class="tag tag-partial">0</span>
+            {% endif %}
+          </td>
+          <td>{{ row.started_at or "n/a" }}</td>
+          <td>{% if row.component %}<code>{{ row.component }}</code>{% endif %}</td>
+          <td>{% if row.source %}<code>{{ row.source }}</code>{% endif %}</td>
+          <td>{{ row.note or "" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty"><code>audit.ingest_table_stat</code> ist nicht vorhanden oder leer.</div>
+  {% endif %}
+</div>
+
+{% if coverage and coverage.missing %}
+<div class="section">
+  <h2>Fehlende logische Datasets</h2>
+  <p class="section-intro">Diese Browse-/Audit-Datasets sind im aktuellen Coverage-Modell vorgesehen, konnten aber in der aktiven DB nicht aufgelöst werden.</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Dataset</th>
+          <th>Status</th>
+          <th>Tabelle</th>
+          <th>Rows</th>
+          <th>Audit Rows</th>
+          <th>Last Seen</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in coverage.missing %}
+        <tr>
+          <td>{{ row.label }}</td>
+          <td><span class="tag tag-fail">missing</span></td>
+          <td>{% if row.fqn %}<code>{{ row.fqn }}</code>{% endif %}</td>
+          <td>{{ row.current_rows if row.current_rows is not none else "" }}</td>
+          <td>{{ row.audited_rows if row.audited_rows is not none else "" }}</td>
+          <td>{{ row.last_seen or "" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
 {% endif %}
-
-{% if freshness %}
-
-| Tabelle | Rows | Delta | Captured | Component | Source | Note |
-|---|---:|---:|---|---|---|---|
-{% for row in freshness %}
-| `{{ row.fqn }}` | {{ row.row_count if row.row_count is not none else 'n/a' }} | {% if row.delta_row_count is none %}n/a{% elif row.delta_row_count > 0 %}+{{ row.delta_row_count }}{% else %}{{ row.delta_row_count }}{% endif %} | {{ row.started_at or 'n/a' }} | `{{ row.component or '' }}` | `{{ row.source or '' }}` | {{ row.note or '' }} |
-{% endfor %}
-
-{% else %}
-`audit.ingest_table_stat` ist nicht vorhanden oder leer.
-{% endif %}
-
 {% endblock %}

@@ -1,25 +1,36 @@
 {% extends "base.html" %}
 {% block content %}
-{% if runs %}
-<table>
-  <thead>
-    <tr><th>Start</th><th>Component</th><th>Source</th><th>Outcome</th><th>ms</th><th>Counts</th><th>Error</th></tr>
-  </thead>
-  <tbody>
-    {% for run in runs %}
-    <tr>
-      <td>{{ run.started_at }}</td>
-      <td><code>{{ run.component }}</code></td>
-      <td>{{ run.source or "" }}</td>
-      <td>{{ run.outcome or "" }}</td>
-      <td>{{ run.duration_ms or "" }}</td>
-      <td><code>{{ run.counts_json or "" }}</code></td>
-      <td>{{ run.error_class or "" }} {{ run.error_message or "" }}</td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
-{% else %}
-<div class="empty">`audit.ingest_run` ist nicht vorhanden oder leer.</div>
-{% endif %}
+<div class="section">
+  <h2>Letzte Ingestion Runs</h2>
+  <p class="section-intro">Read-only Audit-Ansicht auf <code>audit.ingest_run</code>. Die Seite zeigt die zuletzt sichtbaren Läufe mit Outcome, Dauer und Fehlersignalen.</p>
+
+  {% if runs %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Start</th><th>Component</th><th>Source</th><th>Outcome</th><th>ms</th><th>Counts</th><th>Error</th></tr>
+      </thead>
+      <tbody>
+        {% for run in runs %}
+        <tr>
+          <td>{{ run.started_at }}</td>
+          <td><code>{{ run.component }}</code></td>
+          <td>{{ run.source or "" }}</td>
+          <td>
+            <span class="tag {% if run.outcome == 'ok' %}tag-ok{% elif run.outcome == 'fail' %}tag-fail{% else %}tag-partial{% endif %}">
+              {{ run.outcome or "?" }}
+            </span>
+          </td>
+          <td>{{ run.duration_ms or "" }}</td>
+          <td>{% if run.counts_json %}<code>{{ run.counts_json }}</code>{% endif %}</td>
+          <td>{{ run.error_class or "" }} {{ run.error_message or "" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty"><code>audit.ingest_run</code> ist nicht vorhanden oder leer.</div>
+  {% endif %}
+</div>
 {% endblock %}

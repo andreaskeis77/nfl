@@ -1,92 +1,84 @@
 # ROADMAP
 
-Stand: 2026-03-07  
+Stand: 2026-03-09  
 Planungsprinzip: kleine, vertikale, testbare Bolts
 
 ## Leitlinien
 
-- zuerst Sichtbarkeit, dann Breite
-- keine große UI ohne stabile Query-Schicht
-- keine neue Datenquelle ohne Audit / Freshness / DQ-Überlegung
-- jede Phase muss einen sichtbaren Nutzwert liefern
-- Dokumentation läuft parallel zum Code
+- zuerst Sichtbarkeit und Stabilität, dann neue Breite
+- keine neue Datenquelle ohne Audit-/Freshness-/DQ-Überlegung
+- Web-UI bleibt read-only, bis die Daten- und Query-Schicht stabil genug ist
+- Dokumentation und Handoff sind Teil des Produkts
+- vor Chat-Wechseln wird ein Snapshot/Handoff erzeugt
 
 ---
 
-## Phase 1 — Dokumentation auf Projektstand
+## Phase 1 — Plattformbasis und Sichtbarkeit
 
-### Ziel
+### Status
 
-Das Repository soll den realen Projektstand korrekt wiedergeben und als belastbare Arbeitsbasis dienen.
-
-### Scope
-
-- `README.md`
-- `PROJECT_STATE.md`
-- `DATA_CATALOG.md`
-- `ROADMAP.md`
-- `UI_BACKLOG.md`
+**Im Kern erreicht.**
 
 ### Ergebnis
 
-- der Projektstatus ist für Mensch und KI klar
-- der nächste Code-Schritt ist sauber eingerahmt
-- das Repo wirkt nicht mehr wie ein Minimal-Scaffold
+Bereits real vorhanden:
+
+- DuckDB-Plattformbasis
+- Audit-/Run-Tracking
+- erste Ingestion-Bausteine
+- Snapshot-/Handoff-Tooling
+- read-only Web-Foundation
+- browsebare Kernseiten für Audit, Seasons, Teams und Players
+
+### Restarbeiten innerhalb dieser Phase
+
+- visuelle UI-Schale stabilisieren
+- Dokumentation auf den echten Stand ziehen
+- Smoke-Checks gegen UI-Regressionen schärfen
 
 ---
 
-## Phase 2 — Data Visibility Foundation
+## Phase 2 — Web-Hardening und Produktkonsistenz
 
 ### Ziel
 
-Vorhandene Daten und Audit-Informationen erstmals sichtbar machen.
+Aus der vorhandenen Web-Foundation eine stabile, gut lesbare Produktoberfläche machen.
 
 ### Scope
 
-- Query-Schicht für:
-  - Tabelleninventar
-  - Row Counts
-  - letzte Runs
-  - Seasons / Weeks / Games
-- kleines read-only Webinterface
-- erster UI-Smoke-Test
-- Health-/Status-Endpunkte
-
-### Deliverables
-
-- `src/nfl_rag_db/webapp/...`
-- Templates für Dashboard / Dataset Inventory
-- Tests für Query-Layer und UI-Smoke
+- saubere HTML-/Template-Schale
+- konsistente Navigation und Tabellenlayouts
+- Regression-Tests für UI-Grundlayout
+- README / PROJECT_STATE / UI-Doku synchronisieren
+- Handoff-/Analyzer-Prozess im Alltag verankern
 
 ### Acceptance Criteria
 
-- App startet lokal
-- Dashboard zeigt Tabellen und Rows
-- letzte Runs werden sichtbar
-- Season Browser funktioniert für vorhandene Daten
-- Tests grün
+- Dashboard / Datasets / Freshness / Runs rendern sauber
+- keine Markdown-/Rohtext-Regressionsfehler in Templates
+- Doku behauptet nicht mehr das Gegenteil des echten Repostands
+- Chat-Handoffs können über `docs/_snapshot/latest/chat_handoff.md` starten
 
 ---
 
-## Phase 3 — Browsebare Kernobjekte
+## Phase 3 — Browsebare Kernobjekte vertiefen
 
 ### Ziel
 
-Von Dateninventar zu inhaltlicher Navigation.
+Von „sichtbar“ zu „inhaltlich nützlich“ kommen.
 
 ### Scope
 
-- Team-Ansicht
-- Player-Ansicht
-- Game-Detail
-- Drilldown Season → Week → Game
-- erste UI-orientierte Views / Query-Optimierungen
+- bessere Game-Detailseiten
+- Team-/Roster-/Season-Bezüge ausbauen
+- Week-/Game-Listen weiter verfeinern
+- Such-/Filterpfade verbessern
+- UI-orientierte Views oder Query-Optimierungen ergänzen
 
 ### Acceptance Criteria
 
-- Teams können mit Stats / Schedule angezeigt werden
-- Player können mit saisonalen oder wöchentlichen Stats angezeigt werden
-- Games zeigen Grunddaten und PBP-/Scoring-Überblick
+- Games sind fachlich verständlicher browsbar
+- Team- und Player-Seiten liefern belastbare Drilldowns
 - keine direkte SQL-Logik in Templates
 
 ---
@@ -95,7 +87,7 @@ Von Dateninventar zu inhaltlicher Navigation.
 
 ### Ziel
 
-Die wichtigsten Browse-Achsen fachlich vollständig machen.
+Die wichtigsten Browse-Achsen fachlich vollständiger machen.
 
 ### Priorisierte Datasets
 
@@ -105,44 +97,65 @@ Die wichtigsten Browse-Achsen fachlich vollständig machen.
 4. `rosters_weekly`
 5. `team_week_stats`
 6. `pbp`
-7. zusätzliche Player-/Game-Stats
-8. Snap Counts / Next Gen Stats
-9. Injuries / Preseason / Weather nur nach Bedarf
+7. Injuries / Coaches / Venues
+8. Weather Enrichment
+9. weitere Player-/Game-Stats nach Nutzwert
 
 ### Acceptance Criteria
 
 - jede neue Quelle hat:
   - dokumentierte Herkunft
   - Audit
-  - Row Count Beobachtung
+  - Row-Count-/Freshness-Beobachtung
   - klare Zieltabellen
   - mindestens einen Test
 
 ---
 
-## Phase 5 — Freshness, Registry, DQ
+## Phase 5 — Registry, Freshness, DQ
 
 ### Ziel
 
-Die Plattform weiß explizit, was sie hat, wie frisch es ist und ob es plausibel ist.
+Die Plattform weiß explizit, was sie hat, wie frisch es ist und welche Warnsignale bestehen.
 
 ### Scope
 
-- `control.dataset_registry`
-- `audit.dataset_freshness`
-- `audit.data_quality_check`
-- UI-Ansicht für Freshness / DQ
+- explizitere Dataset Registry
+- Freshness-Sicht je Dataset
+- DQ-Check-Historie
 - Warnindikatoren für leere oder schrumpfende Tabellen
+- UI-Ansichten für Freshness / DQ / Coverage
 
 ### Acceptance Criteria
 
 - pro Dataset ist Freshness sichtbar
-- fehlgeschlagene / veraltete Datasets sind erkennbar
-- DQ-Checks sind historisiert
+- fehlgeschlagene / veraltete Datasets sind klar erkennbar
+- DQ-Signale sind historisiert oder zumindest nachvollziehbar abgelegt
 
 ---
 
-## Phase 6 — Hardening
+## Phase 6 — API- und Produktschicht
+
+### Ziel
+
+Neben der HTML-Oberfläche eine saubere maschinenlesbare Produktschicht aufbauen.
+
+### Scope
+
+- JSON-API für Dashboard / Datasets / Freshness / Browse-Achsen
+- stabile query-orientierte Endpunkte
+- dokumentierte Response-Formate
+- Vorbereitung für Retrieval-/RAG-/Agent-Anbindung
+
+### Acceptance Criteria
+
+- HTML und JSON teilen sich dieselbe belastbare Query-Schicht
+- keine doppelte Fachlogik in zwei separaten Implementierungen
+- Herkunft und Reproduzierbarkeit bleiben erhalten
+
+---
+
+## Phase 7 — Hardening
 
 ### Ziel
 
@@ -151,62 +164,30 @@ Aus einer guten lokalen Plattform eine robuste lokale Plattform machen.
 ### Scope
 
 - CI / Workflows
-- optional Typechecking
 - Lockfile / Dependency-Hygiene
 - bessere Fehlerklassifikation
 - Retry-/Timeout-Konfiguration zentralisieren
-- Test- und Smoke-Strategie ausbauen
+- mehr Gates für Query-/UI-/Snapshot-Regressionen
 
 ### Acceptance Criteria
 
 - wiederholbare lokale Setups
 - definierte Gates
-- weniger manuelle Wissensabhängigkeit
-
----
-
-## Phase 7 — RAG- und Query-Produktschicht
-
-### Ziel
-
-Strukturierte Daten und spätere Chat-/Retrieval-Szenarien sauber verbinden.
-
-### Scope
-
-- dokumentierte browsebare Views
-- `mart.*` oder dedizierte Dokument-Views
-- Game Summary / Player Season Views
-- API-Endpunkte für externe Query-Clients
-
-### Acceptance Criteria
-
-- Datenmodell bleibt System of Record
-- RAG/Chat wird aus Views gespeist, nicht aus adhoc-Text
-- Herkunft und Reproduzierbarkeit bleiben erhalten
+- geringere Wissensabhängigkeit von einzelnen Chats
 
 ---
 
 ## Unmittelbar empfohlener nächster Bolt
 
-## Bolt 01 — Read-only Web-Foundation
+## Bolt — UI-Schale reparieren + Doku synchronisieren
 
 ### Was gebaut werden soll
 
-- FastAPI-App
-- Dashboard
-- Dataset Inventory
-- Latest Runs
-- Season Browser Skeleton
+- `base.html` als echte HTML-Schale
+- `freshness.html` und `runs.html` ohne Markdown-/Rohtext-Ausgabe
+- Smoke-Test gegen diese Regression
+- Synchronisierung von `README.md`, `PROJECT_STATE.md`, `ROADMAP.md`, `UI_BACKLOG.md`
 
 ### Warum genau jetzt
 
-Weil bereits genug Daten- und Audit-Struktur vorhanden ist, um daraus sofort sichtbaren Produktwert zu machen.  
-Mehr Daten ohne Sichtbarkeit würden das Projekt im Blindflug vergrößern.
-
-### Was noch nicht Teil dieses Bolts ist
-
-- komplexe React-Frontends
-- Auth
-- Write-Operationen
-- voll ausgebaute Team-/Player-Profile
-- RAG-Integration
+Weil der Plattformkern und das Handoff-Tooling bereits stehen, aber die sichtbare Oberfläche und Teile der Doku noch uneinheitlich sind. Mehr Feature-Breite würde auf instabiler Grundlage aufsetzen.

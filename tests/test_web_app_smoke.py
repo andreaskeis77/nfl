@@ -6,11 +6,13 @@ from fastapi.testclient import TestClient
 from nfl_rag_db.webapp import app as webapp_app
 
 
+
 def build_connection(db_path: Path):
     return duckdb.connect(str(db_path), read_only=True)
 
 
-def test_dashboard_datasets_and_freshness_smoke(monkeypatch, sample_db_path):
+
+def test_dashboard_datasets_freshness_and_runs_smoke(monkeypatch, sample_db_path):
     monkeypatch.setattr(webapp_app, "connect", lambda db_path=None: build_connection(sample_db_path))
     monkeypatch.setattr(webapp_app, "default_db_path", lambda base_dir=None: Path(sample_db_path))
 
@@ -19,15 +21,26 @@ def test_dashboard_datasets_and_freshness_smoke(monkeypatch, sample_db_path):
     dashboard = client.get("/dashboard")
     datasets = client.get("/datasets")
     freshness = client.get("/freshness")
+    runs = client.get("/runs")
 
     assert dashboard.status_code == 200
     assert datasets.status_code == 200
     assert freshness.status_code == 200
+    assert runs.status_code == 200
+
+    assert "<!DOCTYPE html>" in dashboard.text
+    assert 'href="/dashboard"' in dashboard.text
+    assert 'href="/freshness"' in dashboard.text
+    assert "[Dashboard](/dashboard)" not in dashboard.text
 
     assert "Logical Coverage" in dashboard.text
     assert "core.pbp" in datasets.text
     assert "Audit / Freshness" in freshness.text
     assert "core.game" in freshness.text
+    assert "| Tabelle |" not in freshness.text
+    assert "Letzte Ingestion Runs" in runs.text
+    assert "ingest_player_stats" in runs.text
+
 
 
 def test_season_week_game_routes(monkeypatch, sample_db_path):
@@ -49,6 +62,7 @@ def test_season_week_game_routes(monkeypatch, sample_db_path):
     assert "2024" in season.text
     assert "2024_01_DAL_NYG" in week.text
     assert "Play-by-Play Vorschau" in game.text
+
 
 
 def test_team_and_player_routes(monkeypatch, sample_db_path):
